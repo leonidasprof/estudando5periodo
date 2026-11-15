@@ -28,6 +28,16 @@
     gov: { nome: "Ricardo Baudel", foto: "assets/Ricardo_Baudel.jpg", foco: [51, 38], zoom: 1.4 },
     eag: { nome: "Hayanna Oliveira", foto: "assets/Hayanna_Oliveira.jpg", foco: [53, 41], zoom: 1.35 },
   };
+  /* Carca: o carcará tech, mascote da #TurmaGTI. Uma pose para cada momento do app. */
+  const CARCA = {
+    hero: { src: "assets/carca-hero.webp", w: 570, h: 1113, alt: "Carca, o mascote carcará da turma de GTI, fazendo joinha" },
+    estudando: { src: "assets/carca-estudando.webp", w: 285, h: 285, alt: "Carca estudando no notebook" },
+    comemorando: { src: "assets/carca-comemorando.webp", w: 330, h: 289, alt: "Carca comemorando" },
+    pensando: { src: "assets/carca-pensando.webp", w: 285, h: 305, alt: "Carca pensativo" },
+    vr: { src: "assets/carca-vr.webp", w: 340, h: 305, alt: "Carca com óculos de realidade virtual" },
+  };
+  const carca = (pose, cls = "") => { const c = CARCA[pose]; return `<img class="carca ${cls}" src="${c.src}" width="${c.w}" height="${c.h}" alt="${c.alt}" decoding="async">`; };
+  const fala = (txt, cls = "") => `<p class="fala ${cls}">${txt}</p>`;
   const avatar = (disc, tam = "md") => {
     const p = PROF[disc], [fx, fy] = p.foco;
     return `<span class="avatar avatar-${tam}"><span class="avatar-in"><img src="${p.foto}" alt="Prof. ${esc(p.nome)}" decoding="async"
@@ -177,9 +187,9 @@
       setTimeout(() => {
         colacao ? chuvaDeCapelos(28) : confete(90);
         modal(colacao
-          ? `<div class="capelo-big">🎓</div><p class="eyebrow">Colação de grau</p><h2>Parabéns, <span class="grad">${esc(nomeJogador())}</span>!</h2>
+          ? `<div class="modal-carca">${carca("comemorando", "carca-modal")}<span class="capelo-big">🎓</span></div><p class="eyebrow">Colação de grau</p><h2>Parabéns, <span class="grad">${esc(nomeJogador())}</span>!</h2>
              <p>Você chegou a <b>${XP_COLACAO} créditos</b> e virou <b>Formando(a)</b>. Seu diploma (não oficial 😄) já está em Desempenho.</p>`
-          : `<div class="nivel-big">${n.ic}</div><p class="eyebrow">Subiu de nível</p><h2>Agora você é <span class="grad">${n.nome}</span></h2>
+          : `<div class="modal-carca">${carca("comemorando", "carca-modal")}<span class="nivel-big">${n.ic}</span></div><p class="eyebrow">Subiu de nível</p><h2>Agora você é <span class="grad">${n.nome}</span></h2>
              <p class="muted">${proximoNivelTexto()}</p>`);
       }, 700);
     }
@@ -271,17 +281,20 @@
             <input id="nome" maxlength="40" autocomplete="name" placeholder="Ex.: Ana Souza" value="${esc(db.nome || "")}">
           </div>
         </div>
-        <div class="hero-art" role="img" aria-label="Seu nível: ${n.nome}, ${db.xp} de ${XP_COLACAO} créditos para a colação de grau">
-          <svg class="anel" viewBox="0 0 120 120" aria-hidden="true">
-            <defs><linearGradient id="gAnel" x1="0" x2="1"><stop offset="0" stop-color="#A855F7"/><stop offset="1" stop-color="#22D3EE"/></linearGradient></defs>
-            <circle cx="60" cy="60" r="54" class="anel-fundo"/>
-            ${rumo ? `<circle cx="60" cy="60" r="54" class="anel-valor" style="--p:${rumo}"/>` : ""}
-          </svg>
-          <div class="orb" aria-hidden="true"><div>
-            <span class="nivel-ic">${n.ic}</span>
-            <strong class="grad">${n.nome}</strong>
-            <span class="muted small">${db.xp} / ${XP_COLACAO} créditos<br>para colar grau</span>
-          </div></div>
+        <div class="poster">
+          ${fala(db.nome ? `Bora pra formatura, <b>${esc(db.nome.split(" ")[0])}</b>? 🎓` : `E aí! Eu sou o <b>Carca</b>. Bora pra formatura? 🎓`, "fala-hero")}
+          <div class="poster-frame">
+            ${carca("hero", "poster-img")}
+            <div class="nivel-card" role="img" aria-label="Seu nível: ${n.nome}, ${db.xp} de ${XP_COLACAO} créditos para a colação de grau">
+              <span class="nivel-ic" aria-hidden="true">${n.ic}</span>
+              <div class="nivel-txt">
+                <span class="eyebrow" style="margin:0">Seu nível</span>
+                <strong>${n.nome}</strong>
+                <div class="bar-row"><div class="bar"><i style="--w:${rumo}%"></i></div><span class="small"><b>${db.xp}</b>/${XP_COLACAO}</span></div>
+                <span class="muted small">créditos para colar grau</span>
+              </div>
+            </div>
+          </div>
           ${B.disciplinas.map((d, i) => `<span class="float f${i + 1}" aria-hidden="true">${avatar(d.id, "sm")}</span>`).join("")}
         </div>
       </section>
@@ -371,6 +384,7 @@
             <span class="muted small">(as letras citadas nas explicações podem mudar)</span></label>
         </div>
         <div class="card resumo">
+          <div class="carca-dica">${carca("estudando", "carca-sm")}${fala(pool.length ? "Escolhe aí que eu estudo junto com você!" : "Hmm, nada por aqui com esses filtros…")}</div>
           <p class="eyebrow">Resumo</p>
           <div class="resumo-head">${avatar(setup.disc, "md")}<div><h3>${esc(DISC[setup.disc].nome)}</h3><span class="prof">Prof. ${esc(PROF[setup.disc].nome)}</span></div></div>
           <p class="muted">${setup.unidades.map(unidadeLabel).join(", ") || "Nenhuma unidade"}${setup.questionario ? " · " + esc(setup.questionario) : ""}</p>
@@ -554,6 +568,8 @@
 
     app.querySelector("#fb").innerHTML = `
       <div class="feedback ${resp.ok ? "ok" : "nok"}" role="status">
+        <div class="fb-carca">${carca(resp.ok ? "comemorando" : "pensando", "carca-sm")}</div>
+        <div class="fb-corpo">
         <div class="fb-topo">
           <h3 class="${resp.ok ? "ok-txt" : "nok-txt"}">${ic(resp.ok ? "check" : "x")} ${titulo}</h3>
           ${ev && ev.xp ? `<span class="xp-chip" title="${esc(ev.partes.join(" · "))}">+${ev.xp} créditos</span>` : ""}
@@ -564,7 +580,8 @@
         ${erros ? `<div class="fb-bloco">${erros}</div>` : ""}
         <div class="fb-bloco"><p class="eyebrow">Por quê?</p><p>${esc(q.explicacao)}</p></div>
         ${q.observacao ? `<div class="obs">${ic("alert")} <span>${esc(q.observacao)}</span></div>` : ""}
-        ${q.gabarito_oficial_moodle ? `<div class="obs">No Moodle, o gabarito oficial marca: ${q.gabarito_oficial_moodle.map(k => letraVis(k)).join(", ")}. Veja a observação acima.</div>` : ""}
+        ${q.gabarito_oficial_moodle ? `<div class="obs">${ic("alert")} <span>No Moodle, o gabarito oficial marca: ${q.gabarito_oficial_moodle.map(k => letraVis(k)).join(", ")}. Veja a observação acima.</span></div>` : ""}
+        </div>
       </div>`;
   }
 
@@ -589,7 +606,7 @@
       <h2>${esc(quiz.titulo)}</h2>
       <div class="grid stagger" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));align-items:start">
         <div class="card result-card">
-          <div class="selo-res">${selo}</div>
+          <div class="selo-res">${carca(p >= 70 ? "comemorando" : "pensando", "carca-res")}<span class="selo-emoji" aria-hidden="true">${selo}</span></div>
           <div class="score grad" data-alvo="${p}">0%</div>
           <p><b>${acertos}</b> de <b>${total}</b> corretas · <b>+${quiz.xpRodada}</b> créditos</p>
           <p class="muted">${msg}</p>
@@ -625,6 +642,13 @@
     app.innerHTML = `
       <p class="eyebrow">Desempenho</p>
       <h2>Sua jornada até a <span class="grad">formatura</span></h2>
+      <div class="card banner-vr">
+        ${carca("vr", "carca-banner")}
+        <div>
+          <p class="eyebrow">Visão do futuro</p>
+          ${fala(db.xp >= XP_COLACAO ? "Já tô vendo você de beca e capelo! 🎓" : `Tô vendo aqui no VR: faltam <b>${XP_COLACAO - db.xp} créditos</b> pra sua colação de grau.`, "fala-banner")}
+        </div>
+      </div>
 
       <div class="card trilha stagger">
         <div class="trilha-linha"><i style="--w:${Math.min(100, pct(db.xp, NIVEIS[NIVEIS.length - 1].xp))}%"></i></div>

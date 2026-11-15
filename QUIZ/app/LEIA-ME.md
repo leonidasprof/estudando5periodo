@@ -7,10 +7,22 @@ Criado por @prof.tenebroso (Leônidas Leandro), GTI 5º período, CESAR School. 
 Dê dois cliques em `index.html`. Funciona offline (só a fonte Poppins precisa de internet; sem ela usa a fonte do sistema).
 Para compartilhar, envie a pasta `app` inteira (zipada).
 
+Online: https://leonidasprof.github.io/estudando5periodo/
+
 ## Arquivos
-- `index.html`, `styles.css`, `app.js`: o app.
+- `index.html`, `styles.css`, `app.js`: o app (inclui o conjunto de ícones SVG no `index.html`).
 - `banco.js`: as questões. É gerado a partir de `../banco_questoes.json`.
 - `assets/cesar-school-logo.png`: logo com fundo transparente.
+- `assets/*.jpg`: fotos dos professores (Humberto Caetano, Ricardo Baudel, Hayanna Oliveira). O enquadramento do rosto fica em `PROF` no `app.js` (`foco` e `zoom`).
+- `assets/carca-*.webp`: poses do mascote **Carca**, recortadas da arte original:
+
+| Pose | Onde aparece |
+|---|---|
+| `carca-hero` (joinha) | cartaz da tela inicial, com o nível do jogador |
+| `carca-estudando` (notebook) | tela Estudar |
+| `carca-comemorando` | acerto, resultado ≥ 70%, subida de nível e colação |
+| `carca-pensando` (“?”) | erro e resultado < 70% |
+| `carca-vr` (óculos VR) | Desempenho, “visão do futuro” |
 
 ## Atualizar as questões
 1. Edite `../banco_questoes.json`.
@@ -24,4 +36,4 @@ Para compartilhar, envie a pasta `app` inteira (zipada).
 - **Combo 🔥**: a partir de 3 acertos seguidos, +5 por questão. Errar zera o combo; erro nunca tira créditos.
 - Níveis: Calouro → Veterano → Estagiário → Monitor → Concluinte → **Formando (1000 créditos = colação de grau e diploma)** → Orador da Turma → Laureado.
 - 12 conquistas, diploma (não oficial) com o nome do jogador, revisão só das erradas.
-- O progresso fica salvo no navegador de cada pessoa (localStorage).
+- O progresso fica salvo no navegador de cada pessoa (localStorage), inclusive a rodada em andamento. Backup em arquivo na tela Desempenho.
