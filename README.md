@@ -15,6 +15,9 @@ Criado por **[@prof.tenebroso](https://instagram.com/prof.tenebroso)** (Leônida
 
 ## Como usar
 
+**Online:** https://leonidasprof.github.io/estudando5periodo/
+
+**Offline:**
 1. Baixe o repositório (botão **Code → Download ZIP**) e descompacte.
 2. Abra `QUIZ/app/index.html` no navegador (dois cliques). Funciona offline.
 
