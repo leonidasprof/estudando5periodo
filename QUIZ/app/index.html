@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quiz GTI Formatura</title>
+  <meta name="description" content="Quiz de estudo para Gestão de Segurança Cibernética, Governança em TI e Estudos Avançados em GTI.">
+  <link rel="icon" href="assets/cesar-school-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=4">
+</head>
+<body>
+  <div class="glow glow-1" aria-hidden="true"></div>
+  <div class="glow glow-2" aria-hidden="true"></div>
+
+  <header class="nav-wrap">
+    <nav class="nav">
+      <a class="brand" href="#inicio" aria-label="Início">
+        <img src="assets/cesar-school-logo.png" alt="CESAR School" class="brand-logo">
+        <span class="brand-text">Quiz <span class="grad">GTI</span></span>
+      </a>
+      <div class="nav-links">
+        <a href="#inicio" data-nav="inicio">Início</a>
+        <a href="#estudar" data-nav="estudar">Estudar</a>
+        <a href="#desempenho" data-nav="desempenho">Desempenho</a>
+      </div>
+      <a class="hud" id="hud" href="#desempenho" aria-label="Seus créditos e nível"></a>
+      <button class="icon-btn" id="btn-tema" aria-label="Alternar tema claro/escuro" title="Alternar tema"></button>
+    </nav>
+  </header>
+
+  <main id="app" tabindex="-1"></main>
+
+  <footer class="footer">
+    <p>Feito por <a href="https://instagram.com/prof.tenebroso" target="_blank" rel="noopener">@prof.tenebroso</a>
+      · Leônidas Leandro · GTI 5º período · CESAR School</p>
+    <p class="muted small">Projeto independente de estudo, criado por um aluno. Não é material oficial da CESAR School.
+      Questões marcadas como <span class="seal seal-warn">Especialista</span> ainda não têm gabarito oficial confirmado.</p>
+  </footer>
+
+  <script src="banco.js?v=4"></script>
+  <script src="app.js?v=4"></script>
+</body>
+</html>

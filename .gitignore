@@ -1,0 +1,11 @@
+# Este repositório publica SOMENTE o quiz.
+# Materiais do professor, trabalhos pessoais e o AGENTE_RAG (repositório próprio) ficam fora.
+/*
+!/.gitignore
+!/README.md
+!/QUIZ/
+
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
