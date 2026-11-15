@@ -18,7 +18,21 @@
   const B = window.BANCO;
   const Q = B.questoes;
   const DISC = Object.fromEntries(B.disciplinas.map(d => [d.id, d]));
-  const ICON = { gsc: "🛡️", gov: "🏛️", eag: "🚀" };
+  /* Ícones SVG do sprite do index.html. Emojis ficam só na parte "festa" (níveis, conquistas, celebrações). */
+  const ic = (nome, cls = "") => `<svg class="i ${cls}" aria-hidden="true" focusable="false"><use href="#i-${nome}"/></svg>`;
+  /* Professores de cada disciplina.
+   * foco = centro do rosto na foto (x, y em %); zoom = aproximação. O rosto é levado ao centro do avatar redondo.
+   * Para não sobrar borda vazia: zoom >= 50 / menor distância do foco até a borda. */
+  const PROF = {
+    gsc: { nome: "Humberto Caetano", foto: "assets/Humberto_Caetano.jpg", foco: [45, 22], zoom: 2.6 },
+    gov: { nome: "Ricardo Baudel", foto: "assets/Ricardo_Baudel.jpg", foco: [51, 38], zoom: 1.4 },
+    eag: { nome: "Hayanna Oliveira", foto: "assets/Hayanna_Oliveira.jpg", foco: [53, 41], zoom: 1.35 },
+  };
+  const avatar = (disc, tam = "md") => {
+    const p = PROF[disc], [fx, fy] = p.foco;
+    return `<span class="avatar avatar-${tam}"><span class="avatar-in"><img src="${p.foto}" alt="Prof. ${esc(p.nome)}" decoding="async"
+      style="transform-origin:${fx}% ${fy}%;transform:translate(${50 - fx}%, ${50 - fy}%) scale(${p.zoom})"></span></span>`;
+  };
   const STORE = "quizgti:v1";
   const app = document.getElementById("app");
   const reduz = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -179,7 +193,13 @@
   /* ---------- Tema ---------- */
   const btnTema = document.getElementById("btn-tema");
   const temaAtual = () => document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
-  const aplicarTema = t => { if (t) document.documentElement.dataset.theme = t; btnTema.textContent = temaAtual() === "dark" ? "☀️" : "🌙"; };
+  const aplicarTema = t => {
+    if (t) document.documentElement.dataset.theme = t;
+    const escuro = temaAtual() === "dark";
+    btnTema.innerHTML = ic(escuro ? "sun" : "moon");
+    btnTema.setAttribute("aria-label", escuro ? "Mudar para tema claro" : "Mudar para tema escuro");
+    document.querySelector('meta[name="theme-color"]').content = escuro ? "#0A0A24" : "#F5F3FF";
+  };
   aplicarTema(db.tema);
   btnTema.addEventListener("click", () => { db.tema = temaAtual() === "dark" ? "light" : "dark"; save(); aplicarTema(db.tema); });
 
@@ -187,7 +207,8 @@
   const hud = document.getElementById("hud");
   function atualizarHud() {
     const n = NIVEIS[nivelDe(db.xp)];
-    hud.innerHTML = `<span aria-hidden="true">${n.ic}</span><b>${db.xp}</b><span class="muted small">créditos</span>`;
+    hud.innerHTML = `<span class="hud-ic" aria-hidden="true">${n.ic}</span><b>${db.xp}</b><span class="muted small hud-lbl">créditos</span>`;
+    hud.setAttribute("aria-label", `${n.nome}: ${db.xp} créditos. Ver desempenho`);
     hud.title = `${n.nome} · ${proximoNivelTexto()}`;
   }
 
@@ -234,35 +255,34 @@
     const rumo = Math.min(100, pct(db.xp, XP_COLACAO));
     app.innerHTML = `
       <section class="hero">
-        <div class="stagger">
-          <div class="social">
-            <a href="https://instagram.com/prof.tenebroso" target="_blank" rel="noopener" aria-label="Instagram @prof.tenebroso" title="@prof.tenebroso">📸</a>
-            <span class="tag">🎓 Edição Formatura</span>
+        <div class="hero-txt stagger">
+          <div class="badges">
+            <span class="badge">${ic("cap")} Edição Formatura</span>
+            <a class="badge badge-link" href="https://instagram.com/prof.tenebroso" target="_blank" rel="noopener">${ic("insta")} @prof.tenebroso</a>
           </div>
-          <p class="eyebrow">Última reta · GTI 5º período</p>
-          <h1>Rumo à <span class="grad">formatura</span> com o @prof.tenebroso</h1>
-          <p>${Q.length} questões de ${B.disciplinas.length} disciplinas. Acerte, junte créditos, desbloqueie conquistas e chegue à <b>colação de grau</b> antes da prova.</p>
+          <h1>Rumo à <span class="grad">formatura</span></h1>
+          <p class="lead">${Q.length} questões comentadas de ${B.disciplinas.length} disciplinas do 5º período de GTI. Acerte, junte créditos, desbloqueie conquistas e chegue à <b>colação de grau</b> antes da prova.</p>
+          <div class="btn-row">
+            <button class="btn btn-primary btn-lg pulse" type="button" data-acao="estudar">${ic("play")} Começar quiz</button>
+            <button class="btn btn-ghost btn-lg" type="button" data-acao="erradas" ${g.erradas ? "" : "disabled"}>${ic("redo")} Refazer erradas${g.erradas ? ` <span class="count">${g.erradas}</span>` : ""}</button>
+          </div>
           <div class="nome-box">
-            <label for="nome" class="small muted">Seu nome no diploma</label>
-            <input id="nome" maxlength="40" placeholder="Ex.: Ana Souza" value="${esc(db.nome || "")}">
-          </div>
-          <div class="btn-row" style="margin-top:18px">
-            <button class="btn btn-primary pulse" data-acao="estudar">▶ Começar quiz</button>
-            <button class="btn btn-ghost" data-acao="erradas" ${g.erradas ? "" : "disabled"}>↻ Refazer erradas (${g.erradas})</button>
+            <label for="nome">${ic("pen")} Seu nome no diploma</label>
+            <input id="nome" maxlength="40" autocomplete="name" placeholder="Ex.: Ana Souza" value="${esc(db.nome || "")}">
           </div>
         </div>
-        <div class="hero-art" aria-label="Seu nível: ${n.nome}">
+        <div class="hero-art" role="img" aria-label="Seu nível: ${n.nome}, ${db.xp} de ${XP_COLACAO} créditos para a colação de grau">
           <svg class="anel" viewBox="0 0 120 120" aria-hidden="true">
             <defs><linearGradient id="gAnel" x1="0" x2="1"><stop offset="0" stop-color="#A855F7"/><stop offset="1" stop-color="#22D3EE"/></linearGradient></defs>
             <circle cx="60" cy="60" r="54" class="anel-fundo"/>
-            <circle cx="60" cy="60" r="54" class="anel-valor" style="--p:${rumo}"/>
+            ${rumo ? `<circle cx="60" cy="60" r="54" class="anel-valor" style="--p:${rumo}"/>` : ""}
           </svg>
-          <div class="orb"><div>
+          <div class="orb" aria-hidden="true"><div>
             <span class="nivel-ic">${n.ic}</span>
             <strong class="grad">${n.nome}</strong>
-            <span class="muted small">${db.xp} / ${XP_COLACAO} créditos para colar grau</span>
+            <span class="muted small">${db.xp} / ${XP_COLACAO} créditos<br>para colar grau</span>
           </div></div>
-          <span class="float f1">🛡️</span><span class="float f2">🏛️</span><span class="float f3">🚀</span>
+          ${B.disciplinas.map((d, i) => `<span class="float f${i + 1}" aria-hidden="true">${avatar(d.id, "sm")}</span>`).join("")}
         </div>
       </section>
 
@@ -270,23 +290,23 @@
         const feitas = quiz.respostas.filter(Boolean).length, total = quiz.itens.length, acabou = feitas === total;
         return `<section class="section">
           <div class="card continuar">
-            <span class="continuar-ic">${acabou ? "🏁" : "⏸️"}</span>
+            <span class="continuar-ic">${ic(acabou ? "flag" : "pause")}</span>
             <div style="flex:1;min-width:200px">
               <p class="eyebrow" style="margin:0">${acabou ? "Rodada concluída" : "Rodada em andamento"}</p>
               <b>${esc(quiz.titulo)}</b>
               <div class="bar-row" style="margin-top:6px"><div class="bar"><i style="--w:${pct(feitas, total)}%"></i></div><span class="small">${feitas}/${total}</span></div>
             </div>
             <div class="btn-row">
-              <button class="btn btn-primary" data-acao="continuar">${acabou ? "Ver resultado" : "▶ Continuar de onde parei"}</button>
-              <button class="btn" data-acao="descartar" title="Descarta só a rodada; créditos e histórico ficam">Descartar</button>
+              <button class="btn btn-primary" type="button" data-acao="continuar">${acabou ? "Ver resultado" : `${ic("play")} Continuar de onde parei`}</button>
+              <button class="btn" type="button" data-acao="descartar" title="Descarta só a rodada; créditos e histórico ficam">Descartar</button>
             </div>
           </div></section>`;
       })() : ""}
 
       <section class="section">
         <div class="grid grid-stats stagger">
-          ${[[Q.length, "Questões no banco"], [g.resp, "Já respondidas"], [g.taxa + "%", "Taxa de acerto"], [`🔥 ${db.melhorCombo}`, "Melhor combo"]]
-            .map(([v, l]) => `<div class="card stat"><strong>${v}</strong><span>${l}</span></div>`).join("")}
+          ${[["layers", Q.length, "Questões no banco"], ["check", g.resp, "Já respondidas"], ["target", g.taxa + "%", "Taxa de acerto"], ["flame", db.melhorCombo, "Melhor combo"]]
+            .map(([i, v, l]) => `<div class="card stat"><span class="stat-ic">${ic(i)}</span><strong>${v}</strong><span>${l}</span></div>`).join("")}
         </div>
       </section>
 
@@ -303,17 +323,23 @@
       app.querySelector('[data-acao="descartar"]').onclick = () => { if (confirm("Descartar a rodada em andamento? Créditos e respostas já confirmadas continuam salvos.")) { encerrarRodada(); telaInicio(); } };
     }
     app.querySelector('[data-acao="erradas"]').onclick = () => iniciar(Q.filter(q => db.stats[q.id] && !db.stats[q.id].ult), "Segunda chamada: todas as disciplinas");
-    app.querySelectorAll("[data-disc]").forEach(b => b.onclick = () => { setup.disc = b.dataset.disc; setup.unidades = null; setup.questionario = ""; ir("estudar"); });
+    app.querySelectorAll("[data-disc]").forEach(b => b.onclick = e => { e.preventDefault(); setup.disc = b.dataset.disc; setup.unidades = null; setup.questionario = ""; ir("estudar"); });
   }
 
   function cardDisciplina(d) {
     const lista = Q.filter(q => q.disciplina === d.id), r = resumo(lista);
-    return `<button class="card disc-card" data-disc="${d.id}">
-      <div class="disc-head"><span class="disc-icon">${ICON[d.id] || "📘"}</span>
-        <div><h3>${esc(d.nome)}</h3><span class="muted small">${d.codigo} · ${lista.length} questões</span></div></div>
-      <div class="bar-row"><div class="bar"><i style="--w:${r.dominio}%"></i></div><b>${r.dominio}%</b></div>
-      <span class="muted small">${r.resp} respondidas · ${r.erradas} para revisar</span>
-    </button>`;
+    return `<a class="card disc-card" href="#estudar" data-disc="${d.id}">
+      <div class="disc-head">
+        ${avatar(d.id, "lg")}
+        <div class="disc-info">
+          <h3>${esc(d.nome)}</h3>
+          <span class="prof">Prof. ${esc(PROF[d.id].nome)}</span>
+          <span class="muted small">${d.codigo} · ${lista.length} questões</span>
+        </div>
+      </div>
+      <div class="bar-row" aria-label="Domínio ${r.dominio}%"><div class="bar"><i style="--w:${r.dominio}%"></i></div><b>${r.dominio}%</b></div>
+      <div class="disc-foot"><span class="muted small">${r.resp} respondidas · ${r.erradas} para revisar</span><span class="disc-go">Estudar ${ic("right")}</span></div>
+    </a>`;
   }
 
   /* ---------- Tela: Configurar rodada ---------- */
@@ -331,13 +357,13 @@
       <div class="grid stagger" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));align-items:start">
         <div class="card">
           <div class="form-block"><span class="lbl">Disciplina</span>
-            <div class="chips">${B.disciplinas.map(d => `<button class="chip" data-set-disc="${d.id}" aria-pressed="${d.id === setup.disc}">${ICON[d.id]} ${esc(d.nome)}</button>`).join("")}</div></div>
+            <div class="chips">${B.disciplinas.map(d => `<button class="chip chip-prof" type="button" data-set-disc="${d.id}" aria-pressed="${d.id === setup.disc}">${avatar(d.id, "xs")} ${esc(d.nome)}</button>`).join("")}</div></div>
           <div class="form-block"><span class="lbl">Unidades</span>
             <div class="chips">${us.map(u => `<button class="chip" data-set-uni="${u}" aria-pressed="${setup.unidades.includes(u)}">${unidadeLabel(u)}</button>`).join("")}</div></div>
           <div class="form-block"><label for="sel-q">Questionário de origem</label>
             <select id="sel-q"><option value="">Todos</option>${qs.map(n => `<option ${n === setup.questionario ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></div>
           <div class="form-block"><span class="lbl">Modo</span>
-            <div class="chips">${[["todas", "Todas"], ["erradas", "♻️ Só as que errei"], ["novas", "✨ Ainda não respondidas"]]
+            <div class="chips">${[["todas", `${ic("layers")} Todas`], ["erradas", `${ic("redo")} Só as que errei`], ["novas", `${ic("sparkles")} Ainda não respondidas`]]
               .map(([v, l]) => `<button class="chip" data-set-modo="${v}" aria-pressed="${setup.modo === v}">${l}</button>`).join("")}</div></div>
           <div class="form-block"><span class="lbl">Quantidade</span>
             <div class="chips">${[5, 10, 20, 0].map(n => `<button class="chip" data-set-qtd="${n}" aria-pressed="${setup.qtd === n}">${n || "Todas"}</button>`).join("")}</div></div>
@@ -346,14 +372,14 @@
         </div>
         <div class="card resumo">
           <p class="eyebrow">Resumo</p>
-          <h3>${ICON[setup.disc]} ${esc(DISC[setup.disc].nome)}</h3>
+          <div class="resumo-head">${avatar(setup.disc, "md")}<div><h3>${esc(DISC[setup.disc].nome)}</h3><span class="prof">Prof. ${esc(PROF[setup.disc].nome)}</span></div></div>
           <p class="muted">${setup.unidades.map(unidadeLabel).join(", ") || "Nenhuma unidade"}${setup.questionario ? " · " + esc(setup.questionario) : ""}</p>
           <div class="grid grid-stats" style="margin:14px 0">
             <div class="stat"><strong>${pool.length}</strong><span>disponíveis</span></div>
             <div class="stat"><strong>${setup.qtd ? Math.min(setup.qtd, pool.length) : pool.length}</strong><span>nesta rodada</span></div>
           </div>
-          <button class="btn btn-primary" id="go" ${pool.length ? "" : "disabled"} style="width:100%;justify-content:center">▶ Iniciar</button>
-          ${pool.length ? `<p class="muted small" style="margin-top:10px">Dica: 3 acertos seguidos ativam o 🔥 combo (+5 créditos por questão).</p>`
+          <button class="btn btn-primary" id="go" ${pool.length ? "" : "disabled"} style="width:100%;justify-content:center">${ic("play")} Iniciar</button>
+          ${pool.length ? `<p class="muted small" style="margin-top:10px">Dica: 3 acertos seguidos ativam o combo (+5 créditos por questão).</p>`
             : `<p class="muted small" style="margin-top:10px">Nenhuma questão com esses filtros${setup.modo === "erradas" ? ": nenhum erro pendente aqui 🎉" : "."}</p>`}
         </div>
       </div>`;
@@ -396,27 +422,27 @@
     const { q, ordem } = quiz.itens[quiz.i];
     const total = quiz.itens.length, resp = quiz.respostas[quiz.i];
     const fonte = q.fonte_gabarito === "oficial"
-      ? `<span class="seal seal-ok" title="Gabarito confirmado pelo Moodle">✓ Oficial</span>`
+      ? `<span class="seal seal-ok" title="Gabarito confirmado pelo Moodle">${ic("check")} Oficial</span>`
       : `<span class="seal seal-warn" title="Respondida pelo especialista; o Moodle ainda não liberou o gabarito">Especialista</span>`;
     const feitas = quiz.respostas.filter(Boolean).length;
 
     app.innerHTML = `
       <div class="quiz-top">
-        <button class="btn" id="sair" aria-label="Sair da rodada">✕</button>
+        <button class="btn btn-icon" type="button" id="sair" aria-label="Encerrar rodada">${ic("x")}</button>
         <div class="bar" role="progressbar" aria-valuenow="${feitas}" aria-valuemax="${total}"><i style="--w:${pct(feitas, total)}%"></i></div>
         <b>${quiz.i + 1}/${total}</b>
       </div>
       <div class="quiz-hud">
-        <span class="hud-pill ${quiz.combo >= 3 ? "on-fire" : ""}" title="Acertos seguidos">🔥 combo <b>${quiz.combo}</b></span>
-        <span class="hud-pill" title="Créditos ganhos nesta rodada">🎓 <b>+${quiz.xpRodada}</b> nesta rodada</span>
+        <span class="hud-pill ${quiz.combo >= 3 ? "on-fire" : ""}" title="Acertos seguidos">${ic("flame")} combo <b>${quiz.combo}</b></span>
+        <span class="hud-pill" title="Créditos ganhos nesta rodada">${ic("cap")} <b>+${quiz.xpRodada}</b> nesta rodada</span>
       </div>
       <article class="card q-card ${animar ? "q-entra" : ""}" id="qcard">
         <div class="q-meta">
-          <span class="tag">${ICON[q.disciplina]} ${esc(DISC[q.disciplina].nome)}</span>
+          <span class="tag tag-prof">${avatar(q.disciplina, "xs")} ${esc(DISC[q.disciplina].nome)}</span>
           <span class="tag">${unidadeLabel(q.unidade)}</span>
           <span class="tag">${esc(q.origem.questionario)}</span>
           ${fonte}
-          ${dificil(q) ? `<span class="tag" title="Vale +5 créditos">⭐ Difícil</span>` : ""}
+          ${dificil(q) ? `<span class="tag" title="Vale +5 créditos">${ic("star")} Difícil</span>` : ""}
         </div>
         <p class="eyebrow">${esc(q.tema || tipoLabel[q.tipo])}</p>
         <p class="q-enun">${esc(q.enunciado)}</p>
@@ -424,8 +450,8 @@
         <div id="corpo"></div>
         <div id="fb"></div>
         <div class="q-acoes">
-          <button class="btn" id="ant" ${quiz.i ? "" : "disabled"}>← Anterior</button>
-          <button class="btn btn-primary" id="acao"></button>
+          <button class="btn" type="button" id="ant" ${quiz.i ? "" : "disabled"}>${ic("left")} Anterior</button>
+          <button class="btn btn-primary" type="button" id="acao"></button>
         </div>
       </article>`;
 
@@ -459,8 +485,8 @@
     const btn = app.querySelector("#acao");
     const respondida = () => q.alternativas ? sel.size > 0 : valores.filter(Boolean).length === q.corretas.length;
     function atualizarAcao() {
-      if (resp) { btn.textContent = quiz.i + 1 < total ? "Próxima →" : "🎓 Ver resultado"; btn.disabled = false; return; }
-      btn.textContent = "Confirmar"; btn.disabled = !respondida();
+      if (resp) { btn.innerHTML = quiz.i + 1 < total ? `Próxima ${ic("right")}` : `${ic("cap")} Ver resultado`; btn.disabled = false; return; }
+      btn.innerHTML = `${ic("check")} Confirmar`; btn.disabled = !respondida();
     }
     btn.onclick = () => {
       if (resp) { if (quiz.i + 1 < total) { quiz.i++; telaQuestao(); scrollTo({ top: 0, behavior: "smooth" }); } else ir("resultado"); return; }
@@ -529,7 +555,7 @@
     app.querySelector("#fb").innerHTML = `
       <div class="feedback ${resp.ok ? "ok" : "nok"}" role="status">
         <div class="fb-topo">
-          <h3 class="${resp.ok ? "ok-txt" : "nok-txt"}">${resp.ok ? "✓" : "✗"} ${titulo}</h3>
+          <h3 class="${resp.ok ? "ok-txt" : "nok-txt"}">${ic(resp.ok ? "check" : "x")} ${titulo}</h3>
           ${ev && ev.xp ? `<span class="xp-chip" title="${esc(ev.partes.join(" · "))}">+${ev.xp} créditos</span>` : ""}
         </div>
         ${ev && ev.partes.length ? `<p class="muted small">${esc(ev.partes.join(" · "))}</p>` : ""}
@@ -537,7 +563,7 @@
         ${faltou.length && !resp.ok ? `<p class="muted small">Faltou marcar: ${faltou.map(letraVis).join(", ")}</p>` : ""}
         ${erros ? `<div class="fb-bloco">${erros}</div>` : ""}
         <div class="fb-bloco"><p class="eyebrow">Por quê?</p><p>${esc(q.explicacao)}</p></div>
-        ${q.observacao ? `<div class="obs">⚠️ ${esc(q.observacao)}</div>` : ""}
+        ${q.observacao ? `<div class="obs">${ic("alert")} <span>${esc(q.observacao)}</span></div>` : ""}
         ${q.gabarito_oficial_moodle ? `<div class="obs">No Moodle, o gabarito oficial marca: ${q.gabarito_oficial_moodle.map(k => letraVis(k)).join(", ")}. Veja a observação acima.</div>` : ""}
       </div>`;
   }
@@ -568,16 +594,16 @@
           <p><b>${acertos}</b> de <b>${total}</b> corretas · <b>+${quiz.xpRodada}</b> créditos</p>
           <p class="muted">${msg}</p>
           <div class="btn-row" style="justify-content:center;margin-top:16px">
-            <button class="btn btn-primary" id="refazer" ${erradas.length ? "" : "disabled"}>♻️ Segunda chamada (${erradas.length})</button>
-            <button class="btn btn-ghost" id="novo">Nova rodada</button>
+            <button class="btn btn-primary" type="button" id="refazer" ${erradas.length ? "" : "disabled"}>${ic("redo")} Segunda chamada (${erradas.length})</button>
+            <button class="btn btn-ghost" type="button" id="novo">Nova rodada</button>
           </div>
         </div>
         <div class="card">
           <h3>Questão por questão</h3>
           <div class="lista-res">${quiz.itens.map((it, i) => {
             const r = quiz.respostas[i];
-            const ic = !r ? `<span class="ic muted">–</span>` : r.ok ? `<span class="ic ok-txt">✓</span>` : `<span class="ic nok-txt">✗</span>`;
-            return `<button class="item" data-ver="${i}">${ic}<span>${esc(it.q.tema || it.q.id)}</span><span class="muted small" style="margin-left:auto">${it.q.id}</span></button>`;
+            const st = !r ? `<span class="ic muted">–</span>` : r.ok ? `<span class="ic ok-txt">${ic("check")}</span>` : `<span class="ic nok-txt">${ic("x")}</span>`;
+            return `<button class="item" type="button" data-ver="${i}">${st}<span>${esc(it.q.tema || it.q.id)}</span><span class="muted small" style="margin-left:auto">${it.q.id}</span></button>`;
           }).join("")}</div>
         </div>
       </div>`;
@@ -637,15 +663,15 @@
       ${B.disciplinas.map(d => {
         const us = unidadesDe(d.id);
         return `<section class="section">
-          <h3 style="margin-bottom:14px">${ICON[d.id]} ${esc(d.nome)}</h3>
+          <div class="sec-head">${avatar(d.id, "md")}<div><h3>${esc(d.nome)}</h3><span class="prof">Prof. ${esc(PROF[d.id].nome)}</span></div></div>
           <div class="grid grid-3 stagger">${us.map(u => {
             const lista = Q.filter(q => q.disciplina === d.id && q.unidade === u), r = resumo(lista);
             return `<div class="card">
               <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>${unidadeLabel(u)}</b><span class="muted small">${r.resp}/${r.total}</span></div>
               <div class="bar-row" style="margin:10px 0"><div class="bar"><i style="--w:${r.dominio}%"></i></div><b>${r.dominio}%</b></div>
               <div class="btn-row">
-                <button class="btn btn-sm" data-estudar="${d.id}|${u}">Estudar</button>
-                ${r.erradas ? `<button class="btn btn-ghost btn-sm" data-rev="${d.id}|${u}">♻️ Revisar ${r.erradas}</button>` : ""}
+                <button class="btn btn-sm" type="button" data-estudar="${d.id}|${u}">Estudar</button>
+                ${r.erradas ? `<button class="btn btn-ghost btn-sm" data-rev="${d.id}|${u}">${ic("redo")} Revisar ${r.erradas}</button>` : ""}
               </div></div>`;
           }).join("")}</div></section>`;
       }).join("")}
@@ -655,10 +681,10 @@
           <p style="margin-top:0">Seu progresso é salvo <b>automaticamente neste navegador</b> a cada resposta: pode fechar e abrir o app que tudo continua aqui.
             Para levar para outro computador ou celular, ou guardar uma cópia de segurança, use o backup.</p>
           <div class="btn-row">
-            <button class="btn btn-primary" id="exportar">⬇️ Baixar backup</button>
-            <label class="btn btn-ghost" for="importar" style="cursor:pointer">⬆️ Restaurar backup</label>
+            <button class="btn btn-primary" type="button" id="exportar">${ic("download")} Baixar backup</button>
+            <label class="btn btn-ghost" for="importar" style="cursor:pointer" tabindex="0">${ic("upload")} Restaurar backup</label>
             <input type="file" id="importar" accept=".json,application/json" hidden>
-            <button class="btn" id="zerar" style="margin-left:auto">🗑️ Zerar meu progresso</button>
+            <button class="btn btn-danger" type="button" id="zerar">${ic("trash")} Zerar meu progresso</button>
           </div>
           <p class="muted small" style="margin-bottom:0">Janela anônima/privada e "limpar dados de navegação" apagam o progresso salvo no navegador. Por isso vale baixar o backup de vez em quando.</p>
         </div>
@@ -681,6 +707,7 @@
       document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
       toast(`<span class="toast-ic">💾</span><div>Backup baixado. Guarde o arquivo!</div>`);
     };
+    app.querySelector('label[for="importar"]').onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); app.querySelector("#importar").click(); } };
     app.querySelector("#importar").onchange = async e => {
       const f = e.target.files[0]; if (!f) return;
       try {
