@@ -30,11 +30,11 @@
   };
   /* Carca: o carcará tech, mascote da #TurmaGTI. Uma pose para cada momento do app. */
   const CARCA = {
-    hero: { src: "assets/carca-hero.webp?v=3", w: 570, h: 1113, alt: "Carca, o mascote carcará da turma de GTI, fazendo joinha" },
-    estudando: { src: "assets/carca-estudando.webp?v=3", w: 285, h: 285, alt: "Carca estudando no notebook" },
-    comemorando: { src: "assets/carca-comemorando.webp?v=3", w: 330, h: 289, alt: "Carca comemorando" },
-    pensando: { src: "assets/carca-pensando.webp?v=3", w: 285, h: 305, alt: "Carca pensativo" },
-    vr: { src: "assets/carca-vr.webp?v=3", w: 340, h: 305, alt: "Carca com óculos de realidade virtual" },
+    hero: { src: "assets/carca-hero.webp?v=4", w: 606, h: 1254, alt: "Carca, o mascote carcará da turma de GTI, de moletom laranja do CESAR, fazendo joinha" },
+    estudando: { src: "assets/carca-estudando.webp?v=4", w: 274, h: 372, alt: "Carca estudando no notebook, com a mão no queixo" },
+    comemorando: { src: "assets/carca-comemorando.webp?v=4", w: 334, h: 420, alt: "Carca comemorando com os punhos para o alto" },
+    pensando: { src: "assets/carca-pensando.webp?v=4", w: 282, h: 432, alt: "Carca sorrindo de olhos fechados, incentivando a seguir em frente" },
+    vr: { src: "assets/carca-vr.webp?v=4", w: 357, h: 362, alt: "Carca apontando para um tablet holográfico com o globo" },
   };
   const carca = (pose, cls = "") => { const c = CARCA[pose]; return `<img class="carca ${cls}" src="${c.src}" width="${c.w}" height="${c.h}" alt="${c.alt}" decoding="async">`; };
   const fala = (txt, cls = "") => `<p class="fala ${cls}">${txt}</p>`;
@@ -646,7 +646,7 @@
         ${carca("vr", "carca-banner")}
         <div>
           <p class="eyebrow">Visão do futuro</p>
-          ${fala(db.xp >= XP_COLACAO ? "Já tô vendo você de beca e capelo! 🎓" : `Tô vendo aqui no VR: faltam <b>${XP_COLACAO - db.xp} créditos</b> pra sua colação de grau.`, "fala-banner")}
+          ${fala(db.xp >= XP_COLACAO ? "Já tô vendo você de beca e capelo! 🎓" : `Tô vendo aqui no meu tablet: faltam <b>${XP_COLACAO - db.xp} créditos</b> pra sua colação de grau.`, "fala-banner")}
         </div>
       </div>
 

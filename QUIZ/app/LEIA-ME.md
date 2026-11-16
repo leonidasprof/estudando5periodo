@@ -14,15 +14,15 @@ Online: https://leonidasprof.github.io/estudando5periodo/
 - `banco.js`: as questões. É gerado a partir de `../banco_questoes.json`.
 - `assets/cesar-school-logo.png`: logo com fundo transparente.
 - `assets/*.jpg`: fotos dos professores (Humberto Caetano, Ricardo Baudel, Hayanna Oliveira). O enquadramento do rosto fica em `PROF` no `app.js` (`foco` e `zoom`).
-- `assets/carca-*.webp`: poses do mascote **Carca**, recortadas da arte original:
+- `assets/carca-*.webp`: poses do mascote **Carca**, recortadas da arte “Carcará Tech” (moletom laranja do CESAR):
 
 | Pose | Onde aparece |
 |---|---|
-| `carca-hero` (joinha) | cartaz da tela inicial, com o nível do jogador |
-| `carca-estudando` (notebook) | tela Estudar |
-| `carca-comemorando` | acerto, resultado ≥ 70%, subida de nível e colação |
-| `carca-pensando` (“?”) | erro e resultado < 70% |
-| `carca-vr` (óculos VR) | Desempenho, “visão do futuro” |
+| `carca-hero` (joinha, corpo inteiro) | cartaz da tela inicial, com o nível do jogador |
+| `carca-estudando` (notebook, mão no queixo) | tela Estudar |
+| `carca-comemorando` (punhos para o alto) | acerto, resultado ≥ 70%, subida de nível e colação |
+| `carca-pensando` (sorriso de olhos fechados, “segue em frente”) | erro e resultado < 70% |
+| `carca-vr` (tablet holográfico) | Desempenho, “visão do futuro” |
 
 ## Atualizar as questões
 1. Edite `../banco_questoes.json`.
