@@ -2,6 +2,12 @@
    Quiz GTI · Edição Formatura — design system (ver design-system.md)
    ========================================================= */
 
+/* ===== Fonte: Poppins hospedada no projeto (subconjunto latin, cobre o português). Licença: fonts/OFL.txt ===== */
+@font-face { font-family: "Poppins"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/poppins-400.woff2") format("woff2"); }
+@font-face { font-family: "Poppins"; font-style: normal; font-weight: 500; font-display: swap; src: url("fonts/poppins-500.woff2") format("woff2"); }
+@font-face { font-family: "Poppins"; font-style: normal; font-weight: 600; font-display: swap; src: url("fonts/poppins-600.woff2") format("woff2"); }
+@font-face { font-family: "Poppins"; font-style: normal; font-weight: 700; font-display: swap; src: url("fonts/poppins-700.woff2") format("woff2"); }
+
 /* ===== Tokens ===== */
 :root {
   --bg: #0A0A24;

@@ -4,13 +4,14 @@ Quiz de estudo com 198 questões de Gestão de Segurança Cibernética, Governan
 Criado por @prof.tenebroso (Leônidas Leandro), GTI 5º período, CESAR School. Projeto independente, não oficial.
 
 ## Como abrir
-Dê dois cliques em `index.html`. Funciona offline (só a fonte Poppins precisa de internet; sem ela usa a fonte do sistema).
+Dê dois cliques em `index.html`. Funciona 100% offline: a fonte Poppins fica em `fonts/` (WOFF2, subconjunto latin, licença SIL OFL em `fonts/OFL.txt`).
 Para compartilhar, envie a pasta `app` inteira (zipada).
 
 Online: https://leonidasprof.github.io/estudando5periodo/
 
 ## Arquivos
 - `index.html`, `styles.css`, `app.js`: o app (inclui o conjunto de ícones SVG no `index.html`).
+- `fonts/poppins-*.woff2`: fonte Poppins (400, 500, 600 e 700) hospedada no próprio projeto.
 - `banco.js`: as questões. É gerado a partir de `../banco_questoes.json`.
 - `assets/cesar-school-logo.webp`: logo com fundo transparente (cabeçalho). `favicon.png` e `apple-touch-icon.png`: ícones da aba e da tela inicial do celular.
 - `assets/og-image.jpg` (1200×630): imagem que aparece ao compartilhar o link no WhatsApp, LinkedIn etc.
