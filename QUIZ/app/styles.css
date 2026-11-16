@@ -176,9 +176,10 @@ h3 { font-size: 17px; line-height: 1.3; margin: 0; }
 @keyframes respirar { 50% { transform: scale(1.025); } }
 .poster-frame::after { content: ""; position: absolute; inset: 0; pointer-events: none;
   background: radial-gradient(60% 40% at 0% 0%, rgba(10, 10, 36, .55), transparent 70%),
-              linear-gradient(to bottom, transparent 52%, rgba(10, 10, 36, .55) 72%, rgba(10, 10, 36, .92) 100%); }
-.nivel-card { position: absolute; left: 14px; right: 14px; bottom: 14px; z-index: 2; display: flex; align-items: center; gap: 14px; padding: 14px 16px;
-  border-radius: 18px; color: #fff; background: rgba(19, 19, 58, .7); border: 1px solid rgba(168, 85, 247, .45); backdrop-filter: blur(12px); }
+              linear-gradient(to bottom, transparent 80%, rgba(10, 10, 36, .5) 100%); }
+/* O cartão fica abaixo do Carca (encostando na borda) para não cobrir o símbolo do CESAR no moletom */
+.nivel-card { position: relative; z-index: 2; margin: -22px 14px 0; display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+  border-radius: 18px; color: #fff; background: rgba(19, 19, 58, .92); border: 1px solid rgba(168, 85, 247, .45); backdrop-filter: blur(12px); box-shadow: var(--shadow); }
 .nivel-card .muted { color: rgba(255, 255, 255, .72); }
 .nivel-card .eyebrow { color: #67E8F9; }
 .nivel-card strong { display: block; font-size: 18px; line-height: 1.25; }

@@ -285,14 +285,14 @@
           ${fala(db.nome ? `Bora pra formatura, <b>${esc(db.nome.split(" ")[0])}</b>? 🎓` : `E aí! Eu sou o <b>Carca</b>. Bora pra formatura? 🎓`, "fala-hero")}
           <div class="poster-frame">
             ${carca("hero", "poster-img")}
-            <div class="nivel-card" role="img" aria-label="Seu nível: ${n.nome}, ${db.xp} de ${XP_COLACAO} créditos para a colação de grau">
-              <span class="nivel-ic" aria-hidden="true">${n.ic}</span>
-              <div class="nivel-txt">
-                <span class="eyebrow" style="margin:0">Seu nível</span>
-                <strong>${n.nome}</strong>
-                <div class="bar-row"><div class="bar"><i style="--w:${rumo}%"></i></div><span class="small"><b>${db.xp}</b>/${XP_COLACAO}</span></div>
-                <span class="muted small">créditos para colar grau</span>
-              </div>
+          </div>
+          <div class="nivel-card" role="img" aria-label="Seu nível: ${n.nome}, ${db.xp} de ${XP_COLACAO} créditos para a colação de grau">
+            <span class="nivel-ic" aria-hidden="true">${n.ic}</span>
+            <div class="nivel-txt">
+              <span class="eyebrow" style="margin:0">Seu nível</span>
+              <strong>${n.nome}</strong>
+              <div class="bar-row"><div class="bar"><i style="--w:${rumo}%"></i></div><span class="small"><b>${db.xp}</b>/${XP_COLACAO}</span></div>
+              <span class="muted small">créditos para colar grau</span>
             </div>
           </div>
           ${B.disciplinas.map((d, i) => `<span class="float f${i + 1}" aria-hidden="true">${avatar(d.id, "sm")}</span>`).join("")}
