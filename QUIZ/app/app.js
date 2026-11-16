@@ -30,17 +30,19 @@
   };
   /* Carca: o carcará tech, mascote da #TurmaGTI. Uma pose para cada momento do app. */
   const CARCA = {
-    hero: { src: "assets/carca-hero.webp?v=4", w: 606, h: 1254, alt: "Carca, o mascote carcará da turma de GTI, de moletom laranja do CESAR, fazendo joinha" },
+    hero: { src: "assets/carca-hero.webp?v=5", avif: "assets/carca-hero.avif?v=5", w: 606, h: 1254, alt: "Carca, o mascote carcará da turma de GTI, de moletom laranja do CESAR, fazendo joinha" },
     estudando: { src: "assets/carca-estudando.webp?v=4", w: 274, h: 372, alt: "Carca estudando no notebook, com a mão no queixo" },
     comemorando: { src: "assets/carca-comemorando.webp?v=4", w: 334, h: 420, alt: "Carca comemorando com os punhos para o alto" },
     pensando: { src: "assets/carca-pensando.webp?v=4", w: 282, h: 432, alt: "Carca sorrindo de olhos fechados, incentivando a seguir em frente" },
     vr: { src: "assets/carca-vr.webp?v=4", w: 357, h: 362, alt: "Carca apontando para um tablet holográfico com o globo" },
   };
-  /* O hero é a imagem principal da tela inicial: carrega já e com prioridade. As outras poses carregam sob demanda. */
+  /* O hero é a imagem principal da tela inicial (o LCP): carrega já, com prioridade e em AVIF (WebP de reserva).
+   * As outras poses carregam sob demanda. */
   const carca = (pose, cls = "") => {
     const c = CARCA[pose];
-    const carga = pose === "hero" ? `loading="eager" fetchpriority="high"` : `loading="lazy"`;
-    return `<img class="carca ${cls}" src="${c.src}" width="${c.w}" height="${c.h}" alt="${c.alt}" ${carga} decoding="async">`;
+    const carga = pose === "hero" ? `loading="eager" fetchpriority="high"` : `loading="lazy" decoding="async"`;
+    const img = `<img class="carca ${cls}" src="${c.src}" width="${c.w}" height="${c.h}" alt="${c.alt}" ${carga}>`;
+    return c.avif ? `<picture><source srcset="${c.avif}" type="image/avif">${img}</picture>` : img;
   };
   const fala = (txt, cls = "") => `<p class="fala ${cls}">${txt}</p>`;
   const avatar = (disc, tam = "md") => {
@@ -270,11 +272,14 @@
   // Pede ao navegador para não apagar os dados por falta de espaço (quando suportado).
   try { navigator.storage?.persist?.(); } catch { /* ignora */ }
 
+  let jaAbriu = false;
   function rota() {
     const h = (location.hash || "#inicio").slice(1);
     document.querySelectorAll("[data-nav]").forEach(a => a.classList.toggle("ativo", a.dataset.nav === h));
     atualizarHud();
-    app.classList.remove("entra"); void app.offsetWidth; app.classList.add("entra");
+    /* Animação de entrada só ao trocar de tela: na abertura o conteúdo aparece direto (melhora o LCP) */
+    if (jaAbriu) { app.classList.remove("entra"); void app.offsetWidth; app.classList.add("entra"); }
+    jaAbriu = true;
     if (h === "quiz" && quiz) return telaQuestao();
     if (h === "resultado" && quiz) return telaResultado();
     if (h === "estudar") return telaSetup();
