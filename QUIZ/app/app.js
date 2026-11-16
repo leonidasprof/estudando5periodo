@@ -24,9 +24,9 @@
    * foco = centro do rosto na foto (x, y em %); zoom = aproximação. O rosto é levado ao centro do avatar redondo.
    * Para não sobrar borda vazia: zoom >= 50 / menor distância do foco até a borda. */
   const PROF = {
-    gsc: { nome: "Humberto Caetano", foto: "assets/Humberto_Caetano.jpg", foco: [45, 22], zoom: 2.6 },
-    gov: { nome: "Ricardo Baudel", foto: "assets/Ricardo_Baudel.jpg", foco: [51, 38], zoom: 1.4 },
-    eag: { nome: "Hayanna Oliveira", foto: "assets/Hayanna_Oliveira.jpg", foco: [53, 41], zoom: 1.35 },
+    gsc: { nome: "Humberto Caetano", foto: "assets/Humberto_Caetano.webp", foco: [45, 22], zoom: 2.6 },
+    gov: { nome: "Ricardo Baudel", foto: "assets/Ricardo_Baudel.webp", foco: [51, 38], zoom: 1.4 },
+    eag: { nome: "Hayanna Oliveira", foto: "assets/Hayanna_Oliveira.webp", foco: [53, 41], zoom: 1.35 },
   };
   /* Carca: o carcará tech, mascote da #TurmaGTI. Uma pose para cada momento do app. */
   const CARCA = {
@@ -36,11 +36,16 @@
     pensando: { src: "assets/carca-pensando.webp?v=4", w: 282, h: 432, alt: "Carca sorrindo de olhos fechados, incentivando a seguir em frente" },
     vr: { src: "assets/carca-vr.webp?v=4", w: 357, h: 362, alt: "Carca apontando para um tablet holográfico com o globo" },
   };
-  const carca = (pose, cls = "") => { const c = CARCA[pose]; return `<img class="carca ${cls}" src="${c.src}" width="${c.w}" height="${c.h}" alt="${c.alt}" decoding="async">`; };
+  /* O hero é a imagem principal da tela inicial: carrega já e com prioridade. As outras poses carregam sob demanda. */
+  const carca = (pose, cls = "") => {
+    const c = CARCA[pose];
+    const carga = pose === "hero" ? `loading="eager" fetchpriority="high"` : `loading="lazy"`;
+    return `<img class="carca ${cls}" src="${c.src}" width="${c.w}" height="${c.h}" alt="${c.alt}" ${carga} decoding="async">`;
+  };
   const fala = (txt, cls = "") => `<p class="fala ${cls}">${txt}</p>`;
   const avatar = (disc, tam = "md") => {
     const p = PROF[disc], [fx, fy] = p.foco;
-    return `<span class="avatar avatar-${tam}"><span class="avatar-in"><img src="${p.foto}" alt="Prof. ${esc(p.nome)}" decoding="async"
+    return `<span class="avatar avatar-${tam}"><span class="avatar-in"><img src="${p.foto}" alt="Prof. ${esc(p.nome)}" width="400" height="400" loading="lazy" decoding="async"
       style="transform-origin:${fx}% ${fy}%;transform:translate(${50 - fx}%, ${50 - fy}%) scale(${p.zoom})"></span></span>`;
   };
   const STORE = "quizgti:v1";
@@ -170,9 +175,30 @@
   }
   function modal(html, aoFechar) {
     const m = document.createElement("div"); m.className = "modal-bg";
-    m.innerHTML = `<div class="modal card" role="dialog" aria-modal="true">${html}<button class="btn btn-primary" data-fechar style="margin-top:18px">Bora continuar! 🎉</button></div>`;
+    m.innerHTML = `<div class="modal card" role="dialog" aria-modal="true">${html}<button class="btn btn-primary" type="button" data-fechar style="margin-top:18px">Bora continuar! 🎉</button></div>`;
+    const titulo = m.querySelector("h2");
+    if (titulo) { titulo.id = "modal-titulo"; m.firstElementChild.setAttribute("aria-labelledby", "modal-titulo"); }
+    const voltarFoco = document.activeElement;
     document.body.appendChild(m);
-    const fechar = () => { m.classList.add("sai"); setTimeout(() => m.remove(), 250); aoFechar && aoFechar(); };
+    let fechado = false;
+    const fechar = () => {
+      if (fechado) return; fechado = true;
+      document.removeEventListener("keydown", teclado);
+      m.classList.add("sai"); setTimeout(() => m.remove(), 250);
+      if (voltarFoco && document.contains(voltarFoco)) voltarFoco.focus();
+      aoFechar && aoFechar();
+    };
+    /* Escape fecha; Tab fica preso dentro do modal enquanto ele estiver aberto */
+    const teclado = e => {
+      if (e.key === "Escape") { e.preventDefault(); fechar(); }
+      else if (e.key === "Tab") {
+        const foco = [...m.querySelectorAll("button, a[href], input, select, textarea, [tabindex]:not([tabindex='-1'])")];
+        const [primeiro, ultimo] = [foco[0], foco[foco.length - 1]];
+        if (e.shiftKey && document.activeElement === primeiro) { e.preventDefault(); ultimo.focus(); }
+        else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primeiro.focus(); }
+      }
+    };
+    document.addEventListener("keydown", teclado);
     m.querySelector("[data-fechar]").onclick = fechar;
     m.onclick = e => { if (e.target === m) fechar(); };
     m.querySelector("[data-fechar]").focus();

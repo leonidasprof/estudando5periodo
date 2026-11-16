@@ -12,8 +12,9 @@ Online: https://leonidasprof.github.io/estudando5periodo/
 ## Arquivos
 - `index.html`, `styles.css`, `app.js`: o app (inclui o conjunto de ícones SVG no `index.html`).
 - `banco.js`: as questões. É gerado a partir de `../banco_questoes.json`.
-- `assets/cesar-school-logo.png`: logo com fundo transparente.
-- `assets/*.jpg`: fotos dos professores (Humberto Caetano, Ricardo Baudel, Hayanna Oliveira). O enquadramento do rosto fica em `PROF` no `app.js` (`foco` e `zoom`).
+- `assets/cesar-school-logo.webp`: logo com fundo transparente (cabeçalho). `favicon.png` e `apple-touch-icon.png`: ícones da aba e da tela inicial do celular.
+- `assets/og-image.jpg` (1200×630): imagem que aparece ao compartilhar o link no WhatsApp, LinkedIn etc.
+- `assets/*.webp` com nome de professor: fotos dos professores (Humberto Caetano, Ricardo Baudel, Hayanna Oliveira). O enquadramento do rosto fica em `PROF` no `app.js` (`foco` e `zoom`).
 - `assets/carca-*.webp`: poses do mascote **Carca**, recortadas da arte “Carcará Tech” (moletom laranja do CESAR):
 
 | Pose | Onde aparece |
@@ -23,6 +24,9 @@ Online: https://leonidasprof.github.io/estudando5periodo/
 | `carca-comemorando` (punhos para o alto) | acerto, resultado ≥ 70%, subida de nível e colação |
 | `carca-pensando` (sorriso de olhos fechados, “segue em frente”) | erro e resultado < 70% |
 | `carca-vr` (tablet holográfico) | Desempenho, “visão do futuro” |
+
+## Antes de publicar
+Passe pelo checklist de produção: imagens WebP/AVIF com `width`/`height`, hero com `fetchpriority="high"` e demais com `loading="lazy"`, meta tags (SEO, Open Graph, Twitter, JSON-LD), teste em 360/390/768/1024/1366/1920 px, teclado (Tab, Enter, Escape fecha o modal), console sem erros e Lighthouse ≥ 90.
 
 ## Atualizar as questões
 1. Edite `../banco_questoes.json`.
