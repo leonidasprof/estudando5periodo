@@ -30,11 +30,11 @@
   };
   /* Carca: o carcará tech, mascote da #TurmaGTI. Uma pose para cada momento do app. */
   const CARCA = {
-    hero: { src: "assets/carca-hero.webp", w: 570, h: 1113, alt: "Carca, o mascote carcará da turma de GTI, fazendo joinha" },
-    estudando: { src: "assets/carca-estudando.webp", w: 285, h: 285, alt: "Carca estudando no notebook" },
-    comemorando: { src: "assets/carca-comemorando.webp", w: 330, h: 289, alt: "Carca comemorando" },
-    pensando: { src: "assets/carca-pensando.webp", w: 285, h: 305, alt: "Carca pensativo" },
-    vr: { src: "assets/carca-vr.webp", w: 340, h: 305, alt: "Carca com óculos de realidade virtual" },
+    hero: { src: "assets/carca-hero.webp?v=3", w: 570, h: 1113, alt: "Carca, o mascote carcará da turma de GTI, fazendo joinha" },
+    estudando: { src: "assets/carca-estudando.webp?v=3", w: 285, h: 285, alt: "Carca estudando no notebook" },
+    comemorando: { src: "assets/carca-comemorando.webp?v=3", w: 330, h: 289, alt: "Carca comemorando" },
+    pensando: { src: "assets/carca-pensando.webp?v=3", w: 285, h: 305, alt: "Carca pensativo" },
+    vr: { src: "assets/carca-vr.webp?v=3", w: 340, h: 305, alt: "Carca com óculos de realidade virtual" },
   };
   const carca = (pose, cls = "") => { const c = CARCA[pose]; return `<img class="carca ${cls}" src="${c.src}" width="${c.w}" height="${c.h}" alt="${c.alt}" decoding="async">`; };
   const fala = (txt, cls = "") => `<p class="fala ${cls}">${txt}</p>`;
