@@ -312,7 +312,7 @@
             <span class="badge">${ic("cap")} Edição Formatura</span>
             <a class="badge badge-link" href="https://instagram.com/prof.tenebroso" target="_blank" rel="noopener">${ic("insta")} @prof.tenebroso</a>
           </div>
-          <h1>Rumo à <span class="grad">formatura</span></h1>
+          <h1>Rumo à <span class="grad-laranja">formatura</span></h1>
           <p class="lead">${Q.length} questões comentadas de ${B.disciplinas.length} disciplinas do 5º período de GTI. Acerte, junte créditos, desbloqueie conquistas e chegue à <b>colação de grau</b> antes da prova.</p>
           <div class="btn-row">
             <button class="btn btn-primary btn-lg pulse" type="button" data-acao="estudar">${ic("play")} Começar quiz</button>
