@@ -911,15 +911,14 @@
       "alternativas": {
         "a": "Senhas iguais gerarão hashes idênticos, permitindo ataques de rainbow tables.",
         "b": "O SHA-256 é um algoritmo obsoleto e inseguro.",
-        "c": "Uma organização recebe um arquivo importante por e-mail e deseja verificar se ele não foi adulterado durante o envio. O remetente forneceu o hash SHA-256 do arquivo original. Qual propriedade da função hash está sendo utilizada nessa verificação?",
+        "c": "O SHA-256 é reversível, permitindo que um atacante recupere a senha original a partir do hash.",
         "d": "Não há vulnerabilidade; SHA-256 é adequado para armazenamento de senhas."
       },
       "corretas": ["a"],
-      "observacao": "A alternativa c no Moodle é, por erro do professor, uma cópia do enunciado de outra questão (U4-Q05). Mantida como está.",
       "explicacao": "Sem salt, a mesma senha sempre gera o mesmo hash: o atacante usa tabelas pré-calculadas (rainbow tables) e descobre senhas comuns de vários usuários de uma vez. Além disso, SHA-256 é rápido demais, facilitando força bruta. Correto: bcrypt, Argon2 ou PBKDF2, com salt aleatório por usuário.",
       "por_que_erradas": {
         "b": "SHA-256 não é obsoleto; é seguro para integridade. O problema é usá-lo puro, sem salt, para senhas.",
-        "c": "Não é uma resposta: é o texto de outra questão colado por engano.",
+        "c": "Hash não é reversível: não existe operação que \"desfaça\" o SHA-256. O risco real é a falta de salt, que permite comparar com hashes pré-calculados.",
         "d": "Há vulnerabilidade: falta de salt e algoritmo rápido demais para senhas."
       }
     },
