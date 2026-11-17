@@ -32,6 +32,7 @@ Passe pelo checklist de produção: imagens WebP/AVIF com `width`/`height`, hero
 ## Atualizar as questões
 1. Edite `../banco_questoes.json`.
 2. Rode `python atualizar_banco.py` dentro desta pasta.
+   Rode também `python gerar_gabarito_sql.py` e cole `../supabase/gabarito.sql` no SQL Editor do Supabase (o ranking corrige as respostas no servidor).
 3. Aumente o número `?v=` nas linhas de `banco.js`, `app.js` e `styles.css` do `index.html` para os navegadores não usarem a versão antiga.
 
 ## Regras do jogo
@@ -42,3 +43,10 @@ Passe pelo checklist de produção: imagens WebP/AVIF com `width`/`height`, hero
 - Níveis: Calouro → Veterano → Estagiário → Monitor → Concluinte → **Formando (1000 créditos = colação de grau e diploma)** → Orador da Turma → Laureado.
 - 12 conquistas, diploma (não oficial) com o nome do jogador, revisão só das erradas.
 - O progresso fica salvo no navegador de cada pessoa (localStorage), inclusive a rodada em andamento. Backup em arquivo na tela Desempenho.
+
+## Ranking (Supabase)
+- Aba **Ranking**: pódio e classificação da turma. Participar é opcional (apelido público; dá para mudar ou sair, e sair apaga os dados no servidor).
+- O navegador envia só "questão + resposta"; o banco confere o gabarito e calcula os créditos do ranking com as mesmas regras do jogo (1 resposta por segundo, no máximo). Só contam respostas dadas depois de entrar.
+- `../supabase/esquema.sql`: tabelas (RLS fechado), funções `ranking_*`. `../supabase/gabarito.sql`: respostas (gerado). `../supabase/instalar.sql`: os dois juntos, para a primeira instalação.
+- A URL e a chave **publishable** ficam em `RANKING` no `app.js` (são públicas). Nunca coloque a chave **secret** no código.
+- Plano grátis do Supabase pausa o projeto após 7 dias sem acesso; se acontecer, reative no painel.

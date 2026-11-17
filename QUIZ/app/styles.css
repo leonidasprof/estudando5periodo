@@ -368,6 +368,50 @@ main.entra > *, main.entra .stagger > * { animation: subir .55s cubic-bezier(.2,
 .xp-float { position: absolute; z-index: 90; transform: translateX(-50%); pointer-events: none; font-weight: 700; color: #FBBF24; text-shadow: 0 2px 10px rgba(0, 0, 0, .5); animation: xp-sobe 1.3s ease-out forwards; }
 @keyframes xp-sobe { 0% { opacity: 0; transform: translate(-50%, 0) scale(.7); } 20% { opacity: 1; transform: translate(-50%, -14px) scale(1.15); } 100% { opacity: 0; transform: translate(-50%, -70px); } }
 
+/* ===== Ranking ===== */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.rk-entrar { display: flex; align-items: flex-start; gap: 22px; margin-top: 8px; }
+.rk-entrar-txt { flex: 1; min-width: 0; }
+.rk-regras { margin: 0 0 4px; padding-left: 18px; color: var(--text-muted); font-size: 14px; display: grid; gap: 6px; }
+.rk-regras b { color: var(--text); }
+.rk-form.nome-box { margin-top: 18px; max-width: 460px; }
+.rk-linha { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.rk-linha input { flex: 1 1 180px; min-width: 0; width: auto; min-height: 44px; padding: 10px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+.rk-linha input:focus { outline: none; border-color: var(--primary); box-shadow: var(--glow); }
+.rk-erro { color: var(--danger); margin: 8px 0 0; min-height: 1em; }
+.rk-erro:empty { display: none; }
+.rk-eu { margin-top: 8px; display: grid; gap: 14px; }
+.rk-eu-topo { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px 32px; }
+.rk-eu-pos { margin-right: auto; }
+.rk-eu-pos b { font-size: 40px; line-height: 1.1; }
+.rk-eu-num { display: grid; text-align: right; }
+.rk-eu-num b { font-size: 22px; }
+.rk-acoes input { flex-basis: 160px; min-height: 36px; padding: 6px 14px; font-size: 13.5px; }
+.rk-sec { margin-top: 40px; }
+.rk-vazio { text-align: center; }
+.podio { list-style: none; margin: 0; padding: 0; display: flex; justify-content: center; gap: 14px; align-items: flex-end; }
+.podio-item { flex: 1 1 0; max-width: 260px; display: grid; justify-items: center; gap: 4px; text-align: center; padding: 18px 12px 0; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow); overflow: hidden; min-width: 0; }
+.podio-1 { order: 2; border-color: #FBBF24; box-shadow: 0 0 28px rgba(251, 191, 36, .28); }
+.podio-2 { order: 1; }
+.podio-3 { order: 3; }
+.podio-medalha { font-size: 40px; line-height: 1; }
+.podio-1 .podio-medalha { font-size: 52px; }
+.podio-nome { font-size: 16px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.podio-xp { font-size: 14px; }
+.podio-xp b { font-size: 20px; }
+.podio-base { align-self: stretch; justify-self: stretch; margin: 10px -12px 0; display: grid; place-items: center; font-weight: 700; font-size: 22px; color: #fff; background: var(--gradient); height: 54px; }
+.podio-1 .podio-base { height: 84px; background: linear-gradient(180deg, #FBBF24, #F37421); }
+.podio-3 .podio-base { height: 38px; }
+.rk-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.rk-item { display: grid; grid-template-columns: 44px 30px 1fr auto; align-items: center; gap: 10px; padding: 10px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); }
+.rk-pos { font-weight: 700; color: var(--text-muted); }
+.rk-nivel { font-size: 20px; text-align: center; }
+.rk-nome { display: grid; min-width: 0; }
+.rk-nome b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rk-xp { display: grid; text-align: right; }
+.rk-xp b { font-size: 18px; }
+.rk-meu { border-color: var(--primary); box-shadow: var(--glow); background: var(--surface-2); }
+
 /* ===== Responsivo ===== */
 @media (max-width: 860px) {
   .hero { grid-template-columns: 1fr; gap: 28px; padding-top: 12px; }
@@ -418,3 +462,19 @@ main.entra > *, main.entra .stagger > * { animation: subir .55s cubic-bezier(.2,
 
 /* Resumo do setup: números lado a lado mesmo no celular */
 .resumo .grid-stats { grid-template-columns: 1fr 1fr; }
+
+/* Ranking no celular */
+@media (max-width: 640px) {
+  .rk-entrar { flex-direction: column; align-items: stretch; gap: 14px; }
+  .rk-entrar .carca-banner { align-self: center; }
+  .podio { gap: 8px; }
+  .podio-item { padding: 14px 6px 0; }
+  .podio-medalha { font-size: 32px; }
+  .podio-1 .podio-medalha { font-size: 40px; }
+  .podio-nome { font-size: 14px; }
+  .podio-item .muted.small { font-size: 11px; }
+  .podio-base { margin: 8px -6px 0; }
+  .rk-item { grid-template-columns: 34px 24px 1fr auto; padding: 10px 12px; gap: 8px; }
+  .rk-eu-pos { flex: 1 1 100%; }
+  .rk-eu-num { text-align: left; }
+}

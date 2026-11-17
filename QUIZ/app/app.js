@@ -12,6 +12,11 @@
  *   - Recuperar um erro (errou antes, acertou agora): +5 de bônus "Segunda chamada".
  *   - Combo: a partir de 3 acertos seguidos, +5 por questão. Errar zera o combo. Erro não tira créditos.
  *   - Níveis de Calouro a Laureado; ao chegar em "Formando(a)" acontece a Colação de Grau (diploma).
+ *  Ranking (opcional, Supabase)
+ *   - Quem entra escolhe um apelido público. Cada resposta vai para o servidor, que CONFERE o gabarito e calcula
+ *     os créditos do ranking com as mesmas regras (o navegador nunca envia a pontuação pronta).
+ *   - Só contam as respostas dadas depois de entrar. Sem internet, as respostas ficam numa fila e sobem depois.
+ *   - "Sair do ranking" apaga o jogador e o progresso dele no servidor.
  */
 (() => {
   "use strict";
@@ -284,6 +289,7 @@
     if (h === "resultado" && quiz) return telaResultado();
     if (h === "estudar") return telaSetup();
     if (h === "desempenho") return telaDesempenho();
+    if (h === "ranking") return telaRanking();
     return telaInicio();
   }
   const ir = h => { if (location.hash === "#" + h) rota(); else location.hash = h; app.focus({ preventScroll: true }); scrollTo({ top: 0 }); };
@@ -539,6 +545,7 @@
       quiz.respostas[quiz.i] = { ok, marcadas: [...sel], valores };
       const ev = registrar(q, ok);
       quiz.respostas[quiz.i].ev = ev;
+      rankingRegistrar(q, sel, valores);
       telaQuestao(false);
       atualizarHud();
       const card = app.querySelector("#qcard"), b2 = app.querySelector("#acao");
@@ -749,8 +756,8 @@
     app.querySelectorAll("[data-rev]").forEach(b => b.onclick = () => { const [d, u] = parse(b.dataset.rev); iniciar(shuffle(Q.filter(q => q.disciplina === d && q.unidade === u && db.stats[q.id] && !db.stats[q.id].ult)), `Segunda chamada · ${DISC[d].nome} · ${unidadeLabel(u)}`); });
     app.querySelector("#zerar").onclick = () => {
       if (!confirm("Apagar respostas, créditos, conquistas e a rodada em andamento? Não dá para desfazer (a não ser que você tenha um backup).")) return;
-      const { tema, nome } = db; quiz = null;
-      db = { stats: {}, xp: 0, conq: {}, recup: 0, melhorCombo: 0, tema, nome }; save(); rota();
+      const { tema, nome, ranking } = db; quiz = null;
+      db = { stats: {}, xp: 0, conq: {}, recup: 0, melhorCombo: 0, tema, nome, ranking }; save(); rota();
       toast(`<span class="toast-ic">🧹</span><div>Progresso zerado. Bora começar de novo!</div>`);
     };
     app.querySelector("#exportar").onclick = () => {
@@ -770,11 +777,196 @@
         const d = j && j.app === "quizgti" ? j.dados : null;
         if (!d || typeof d.stats !== "object" || typeof d.xp !== "number") throw new Error("formato");
         if (!confirm(`Restaurar o backup de ${j.exportado_em?.slice(0, 10) || "data desconhecida"} (${d.xp} créditos)? O progresso atual será substituído.`)) return;
-        db = { stats: {}, conq: {}, recup: 0, melhorCombo: 0, ...d, tema: db.tema };
+        db = { stats: {}, conq: {}, recup: 0, melhorCombo: 0, ...d, tema: db.tema, ranking: d.ranking || db.ranking };
         save(); quiz = restaurarRodada(db.rodada); rota();
         toast(`<span class="toast-ic">✅</span><div>Backup restaurado: <b>${db.xp}</b> créditos.</div>`, "gold");
       } catch { toast(`<span class="toast-ic">⚠️</span><div>Esse arquivo não é um backup válido do Quiz GTI.</div>`); }
       e.target.value = "";
+    };
+  }
+
+  /* ---------- Ranking (Supabase) ----------
+   * A chave abaixo é a "publishable" (pública por natureza). As tabelas ficam fechadas por RLS:
+   * ela só consegue chamar as funções ranking_* definidas em QUIZ/supabase/esquema.sql. */
+  const RANKING = { url: "https://ofpzwycjdjguoyraghpj.supabase.co", chave: "sb_publishable_M5YK53PH78uBiQWMPGxbuA_r6n9v53h" };
+  const MSG_RK = {
+    apelido_invalido: "O apelido precisa ter de 2 a 24 caracteres (letras, números, espaço, ponto, hífen).",
+    jogador_nao_encontrado: "Sua inscrição no ranking não existe mais. Entre de novo quando quiser.",
+  };
+  const espera = ms => new Promise(r => setTimeout(r, ms));
+  async function rpc(fn, args) {
+    const r = await fetch(`${RANKING.url}/rest/v1/rpc/${fn}`, {
+      method: "POST", headers: { apikey: RANKING.chave, "Content-Type": "application/json" }, body: JSON.stringify(args),
+    });
+    const j = await r.json().catch(() => null);
+    if (!r.ok) { const e = new Error(j?.message || `HTTP ${r.status}`); e.code = j?.message; throw e; }
+    return j;
+  }
+  const msgErro = e => MSG_RK[e?.code] || "Não consegui falar com o servidor do ranking. Confira sua internet e tente de novo.";
+
+  /* Fila de respostas: cada resposta vai para o servidor; sem internet, espera e tenta depois. */
+  function rankingRegistrar(q, sel, valores) {
+    const rk = db.ranking; if (!rk) return;
+    rk.fila = rk.fila || [];
+    if (rk.fila.length >= 400) rk.fila.shift();
+    rk.fila.push({ q: q.id, r: q.alternativas ? [...sel].sort() : valores.map(v => v || "") });
+    save(); enviarFila();
+  }
+  let enviando = null;
+  function enviarFila() {
+    if (enviando) return enviando;
+    const rk = db.ranking;
+    if (!rk || !rk.fila?.length) return Promise.resolve();
+    enviando = (async () => {
+      while (db.ranking === rk && rk.fila.length) {
+        try {
+          await rpc("ranking_responder", { p_token: rk.token, p_questao: rk.fila[0].q, p_resposta: rk.fila[0].r });
+          rk.fila.shift(); save();
+          if (rk.fila.length) await espera(1100); // o servidor aceita 1 resposta por segundo
+        } catch (e) {
+          if (e.code === "muito_rapido") { await espera(1100); continue; }
+          if (e.code === "questao_desconhecida" || e.code === "resposta_invalida") { rk.fila.shift(); save(); continue; }
+          if (e.code === "jogador_nao_encontrado") { delete db.ranking; save(); }
+          break; // sem internet: tenta de novo mais tarde
+        }
+      }
+    })().finally(() => { enviando = null; });
+    return enviando;
+  }
+  addEventListener("online", enviarFila);
+  setTimeout(enviarFila, 2500);
+
+  const MEDALHA = ["🥇", "🥈", "🥉"];
+  function telaRanking() {
+    const rk = db.ranking;
+    app.innerHTML = `
+      <p class="eyebrow">Ranking da #TurmaGTI</p>
+      <h2>Quem está mais perto da <span class="grad">formatura</span></h2>
+      ${rk ? `<div class="card rk-eu" id="rk-eu" aria-live="polite"><p class="muted" style="margin:0">Buscando sua posição…</p></div>` : `
+      <div class="card rk-entrar">
+        ${carca("comemorando", "carca-banner")}
+        <div class="rk-entrar-txt">
+          <h3 style="margin-top:0">Entre no ranking</h3>
+          <ul class="rk-regras">
+            <li>Seu <b>apelido</b> fica visível para toda a turma. Use um apelido se não quiser mostrar o nome.</li>
+            <li>Valem as respostas dadas <b>a partir de agora</b>. O servidor confere cada uma no gabarito: não dá para inventar pontos.</li>
+            <li>Pode sair quando quiser: seus dados do ranking são apagados.</li>
+          </ul>
+          <form class="nome-box rk-form" id="rk-form">
+            <label for="rk-apelido">${ic("pen")} Apelido no ranking</label>
+            <div class="rk-linha">
+              <input id="rk-apelido" maxlength="24" minlength="2" required autocomplete="nickname" placeholder="Ex.: Ana S." value="${esc((db.nome || "").slice(0, 24))}">
+              <button class="btn btn-primary" type="submit">${ic("trophy")} Entrar</button>
+            </div>
+            <p class="rk-erro small" id="rk-erro" role="alert"></p>
+          </form>
+        </div>
+      </div>`}
+      <section class="section rk-sec" id="rk-lista" aria-live="polite" aria-busy="true">
+        <div class="card rk-vazio"><p class="muted" style="margin:0">Carregando o ranking…</p></div>
+      </section>`;
+
+    const form = app.querySelector("#rk-form");
+    if (form) form.onsubmit = async e => {
+      e.preventDefault();
+      const btn = form.querySelector("button"), erro = form.querySelector("#rk-erro");
+      btn.disabled = true; erro.textContent = "";
+      try {
+        const [r] = await rpc("ranking_entrar", { p_apelido: form.querySelector("#rk-apelido").value });
+        db.ranking = { id: r.id, token: r.token, fila: [] }; save();
+        toast(`<span class="toast-ic">🏆</span><div><b>Você está no ranking!</b><br>Cada acerto daqui pra frente conta.</div>`, "gold");
+        if (location.hash === "#ranking") telaRanking();
+      } catch (err) { erro.textContent = msgErro(err); btn.disabled = false; }
+    };
+    carregarRanking();
+  }
+
+  async function carregarRanking() {
+    const rk = db.ranking, lista = app.querySelector("#rk-lista");
+    await enviarFila();
+    let top, eu;
+    try {
+      [top, eu] = await Promise.all([rpc("ranking_top", { p_limite: 50 }), rk ? rpc("ranking_eu", { p_token: rk.token }) : null]);
+    } catch (e) {
+      if (location.hash !== "#ranking" || !lista.isConnected) return;
+      lista.setAttribute("aria-busy", "false");
+      lista.innerHTML = `<div class="card rk-vazio"><p style="margin-top:0">${esc(msgErro(e))}</p><button class="btn btn-sm" type="button" id="rk-tentar">${ic("redo")} Tentar de novo</button></div>`;
+      lista.querySelector("#rk-tentar").onclick = telaRanking;
+      if (rk) app.querySelector("#rk-eu").innerHTML = `<p class="muted" style="margin:0">Sua posição aparece quando a conexão voltar.</p>`;
+      return;
+    }
+    if (location.hash !== "#ranking" || !lista.isConnected) return;
+    eu = eu?.[0];
+    if (rk && !eu) { delete db.ranking; save(); toast(`<span class="toast-ic">⚠️</span><div>${esc(MSG_RK.jogador_nao_encontrado)}</div>`); return telaRanking(); }
+    if (rk) renderEu(eu);
+
+    const meuId = eu?.id;
+    const linha = r => {
+      const n = NIVEIS[nivelDe(r.xp)], meu = r.id === meuId;
+      return `<li class="rk-item ${meu ? "rk-meu" : ""}">
+        <span class="rk-pos">${r.posicao}º</span>
+        <span class="rk-nivel" title="${n.nome}" aria-hidden="true">${n.ic}</span>
+        <span class="rk-nome"><b>${esc(r.apelido)}${meu ? ` <span class="tag">você</span>` : ""}</b><span class="muted small">${n.nome} · ${r.dominadas} dominadas</span></span>
+        <span class="rk-xp"><b>${r.xp}</b><span class="muted small">créditos</span></span>
+      </li>`;
+    };
+    const podio = top.slice(0, 3), resto = top.slice(3);
+    lista.setAttribute("aria-busy", "false");
+    lista.innerHTML = !top.length
+      ? `<div class="card rk-vazio">${fala("Ninguém pontuou ainda. O primeiro lugar está esperando por você! 🏆")}</div>`
+      : `<p class="eyebrow">Pódio</p>
+        <ol class="podio" aria-label="Pódio">${podio.map((r, i) => {
+          const n = NIVEIS[nivelDe(r.xp)];
+          return `<li class="podio-item podio-${i + 1} ${r.id === meuId ? "rk-meu" : ""}">
+            <span class="podio-medalha" aria-hidden="true">${MEDALHA[r.posicao - 1] || "🏅"}</span>
+            <span class="sr-only">${r.posicao}º lugar:</span>
+            <b class="podio-nome">${esc(r.apelido)}</b>
+            <span class="muted small">${n.ic} ${n.nome}</span>
+            <span class="podio-xp"><b>${r.xp}</b> créditos</span>
+            <span class="podio-base" aria-hidden="true">${r.posicao}º</span>
+          </li>`; }).join("")}</ol>
+        ${resto.length ? `<p class="eyebrow" style="margin-top:28px">Classificação</p><ol class="rk-lista">${resto.map(linha).join("")}</ol>` : ""}
+        <p class="muted small" style="margin-top:18px">Mostrando ${top.length === 1 ? "o primeiro colocado" : `os ${top.length} primeiros`}. Os créditos do ranking são calculados pelo servidor e contam desde que cada pessoa entrou, por isso podem ser diferentes dos créditos salvos no seu navegador.</p>`;
+  }
+
+  function renderEu(eu) {
+    const box = app.querySelector("#rk-eu"), pend = db.ranking?.fila?.length || 0;
+    box.innerHTML = `
+      <div class="rk-eu-topo">
+        <div class="rk-eu-pos">
+          <p class="eyebrow" style="margin-bottom:2px">Sua posição</p>
+          ${eu.xp > 0
+            ? `<p style="margin:0"><b class="grad">${eu.posicao}º</b> <span class="muted">de ${eu.total}</span></p>`
+            : `<p style="margin:4px 0">Responda uma questão para aparecer no ranking.</p>`}
+        </div>
+        <div class="rk-eu-num"><b>${eu.xp}</b><span class="muted small">créditos no ranking</span></div>
+        <div class="rk-eu-num"><b>${eu.dominadas}</b><span class="muted small">dominadas</span></div>
+      </div>
+      ${pend ? `<p class="muted small">${pend} resposta(s) aguardando internet para subir.</p>` : ""}
+      <form class="rk-linha rk-acoes" id="rk-renomear">
+        <label class="sr-only" for="rk-novo">Apelido no ranking</label>
+        <input id="rk-novo" maxlength="24" minlength="2" required value="${esc(eu.apelido)}" autocomplete="nickname">
+        <button class="btn btn-sm" type="submit">${ic("pen")} Mudar apelido</button>
+        <button class="btn btn-sm" type="button" id="rk-atualizar">${ic("redo")} Atualizar</button>
+        <button class="btn btn-danger btn-sm" type="button" id="rk-sair">${ic("trash")} Sair do ranking</button>
+      </form>
+      <p class="rk-erro small" id="rk-erro2" role="alert"></p>`;
+    const tok = db.ranking.token, erro = box.querySelector("#rk-erro2");
+    box.querySelector("#rk-atualizar").onclick = telaRanking;
+    box.querySelector("#rk-renomear").onsubmit = async e => {
+      e.preventDefault(); erro.textContent = "";
+      try {
+        const novo = await rpc("ranking_apelido", { p_token: tok, p_apelido: box.querySelector("#rk-novo").value });
+        toast(`<span class="toast-ic">✍️</span><div>Apelido no ranking: <b>${esc(novo)}</b></div>`); telaRanking();
+      } catch (err) { erro.textContent = msgErro(err); }
+    };
+    box.querySelector("#rk-sair").onclick = async () => {
+      if (!confirm("Sair do ranking? Seu apelido, seus créditos e seu progresso no ranking serão apagados do servidor. Seu progresso neste navegador continua.")) return;
+      try {
+        await rpc("ranking_sair", { p_token: tok });
+        delete db.ranking; save(); telaRanking();
+        toast(`<span class="toast-ic">👋</span><div>Você saiu do ranking e seus dados foram apagados.</div>`);
+      } catch (err) { erro.textContent = msgErro(err); }
     };
   }
 
