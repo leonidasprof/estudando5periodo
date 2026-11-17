@@ -12,6 +12,9 @@
  *   - Recuperar um erro (errou antes, acertou agora): +5 de bônus "Segunda chamada".
  *   - Combo: a partir de 3 acertos seguidos, +5 por questão. Errar zera o combo. Erro não tira créditos.
  *   - Níveis de Calouro a Laureado; ao chegar em "Formando(a)" acontece a Colação de Grau (diploma).
+ *  Pode cair (Ímã de siglas)
+ *   - Arrastar (ou tocar) a sigla até o conceito: par certo gruda, par errado é repelido e a pessoa tenta de novo.
+ *   - +3 créditos no 1º acerto de primeira de um termo; +1 nos demais. Rodada perfeita = conquista "Ímã humano".
  *  Ranking (opcional, Supabase)
  *   - Quem entra escolhe um apelido público. Cada resposta vai para o servidor, que CONFERE o gabarito e calcula
  *     os créditos do ranking com as mesmas regras (o navegador nunca envia a pontuação pronta).
@@ -84,6 +87,7 @@
     { id: "dom_eag", ic: "🚀", nome: "Pronto pro ENADE", desc: "80% de domínio em Estudos Avançados." },
     { id: "colacao", ic: "🎓", nome: "Colação de grau", desc: `Chegou a ${XP_COLACAO} créditos: Formando(a)!` },
     { id: "laureado", ic: "🏅", nome: "Laureado(a)", desc: "Chegou ao nível máximo." },
+    { id: "ima", ic: "🧲", nome: "Ímã humano", desc: "Ligou todas as siglas de uma rodada de primeira." },
   ];
   const nivelDe = xp => { let n = 0; NIVEIS.forEach((l, i) => { if (xp >= l.xp) n = i; }); return n; };
 
@@ -290,6 +294,7 @@
     if (h === "estudar") return telaSetup();
     if (h === "desempenho") return telaDesempenho();
     if (h === "ranking") return telaRanking();
+    if (h === "podecair") return telaPodeCair();
     return telaInicio();
   }
   const ir = h => { if (location.hash === "#" + h) rota(); else location.hash = h; app.focus({ preventScroll: true }); scrollTo({ top: 0 }); };
@@ -783,6 +788,270 @@
       } catch { toast(`<span class="toast-ic">⚠️</span><div>Esse arquivo não é um backup válido do Quiz GTI.</div>`); }
       e.target.value = "";
     };
+  }
+
+  /* ---------- Pode cair: Ímã de siglas ----------
+   * Arraste a sigla (o ímã) até o conceito certo: se for o par, ela gruda; se não, é repelida e volta.
+   * Também funciona tocando/clicando (sigla e depois conceito) e pelo teclado (Tab + Enter).
+   * Créditos: +3 no 1º acerto de primeira de um termo; +1 nos demais acertos. Não contam no ranking
+   * (o servidor só confere as questões do quiz). Domínio por termo fica em db.glos. */
+  const IMA_POR_RODADA = 6;
+  let glosCarregando = null;
+  const carregarGlossario = () => window.GLOSSARIO ? Promise.resolve() : (glosCarregando ||= new Promise((ok, falha) => {
+    const s = document.createElement("script"); s.src = "glossario.js?v=1"; s.async = true;
+    s.onload = ok; s.onerror = () => { glosCarregando = null; s.remove(); falha(); };
+    document.head.appendChild(s);
+  }));
+  const termosDe = d => (window.GLOSSARIO?.[d] || []).map(x => ({ ...x, id: `${d}:${x.t}` }));
+  let pc = { modo: "jogar", disc: null, busca: "" };
+  let ima = null;
+
+  function novaRodada(disc) {
+    const todos = shuffle(termosDe(disc));
+    const g = id => db.glos?.[id];
+    /* prioridade: nunca acertou de primeira > errou da última vez > já dominado */
+    const peso = x => g(x.id)?.ok ? 2 : g(x.id) ? 1 : 0;
+    const pares = todos.sort((a, b) => peso(a) - peso(b)).slice(0, IMA_POR_RODADA);
+    ima = { disc, pares, alvos: shuffle(pares), pecas: shuffle(pares), feitos: new Set(), erros: {}, sel: null, xp: 0, primeira: 0 };
+  }
+
+  function somarXp(pts, alvo, extras = []) {
+    const ev = { xp: pts, partes: [], conquistas: [], nivelAntes: nivelDe(db.xp) };
+    db.xp += pts; ev.nivelDepois = nivelDe(db.xp);
+    const ganha = id => { if (!db.conq[id]) { db.conq[id] = Date.now(); ev.conquistas.push(CONQ.find(c => c.id === id)); } };
+    extras.forEach(ganha);
+    if (db.xp >= XP_COLACAO) ganha("colacao");
+    if (ev.nivelDepois === NIVEIS.length - 1) ganha("laureado");
+    save(); atualizarHud(); celebrarEventos(ev, alvo);
+  }
+
+  async function telaPodeCair() {
+    pc.disc = pc.disc || setup.disc || "gsc";
+    app.innerHTML = `
+      <p class="eyebrow">Pode cair na prova</p>
+      <h2>Ímã de <span class="grad">siglas</span></h2>
+      <div class="card carca-dica pc-dica">
+        ${carca("estudando", "carca-sm")}
+        ${fala(`Arraste a sigla até o conceito: par certo, o <b>ímã gruda</b> 🧲; errado, é <b>repelido</b> e você tenta de novo. <span class="so-desktop">Também dá para clicar na sigla e depois no conceito.</span><span class="so-celular">Ou toque na sigla e depois no conceito.</span>`)}
+      </div>
+      <div class="pc-barra">
+        <div class="chips" role="group" aria-label="Disciplina">${B.disciplinas.map(d => `<button class="chip chip-prof" type="button" data-pc-disc="${d.id}" aria-pressed="${d.id === pc.disc}" aria-label="${esc(d.nome)}">${avatar(d.id, "xs")} <span class="so-desktop">${esc(d.nome)}</span><span class="so-celular" aria-hidden="true">${{ gsc: "Segurança", gov: "Governança", eag: "Est. Avançados" }[d.id] || esc(d.nome)}</span></button>`).join("")}</div>
+        <div class="pc-modos" role="group" aria-label="Modo">
+          <button class="chip" type="button" data-pc-modo="jogar" aria-pressed="${pc.modo === "jogar"}">🧲 Jogar</button>
+          <button class="chip" type="button" data-pc-modo="colinha" aria-pressed="${pc.modo === "colinha"}">📖 Colinha</button>
+        </div>
+      </div>
+      <div id="pc-corpo" class="pc-corpo"><div class="card rk-vazio"><p class="muted" style="margin:0">Carregando as siglas…</p></div></div>`;
+    app.querySelectorAll("[data-pc-disc]").forEach(b => b.onclick = () => { pc.disc = b.dataset.pcDisc; ima = null; telaPodeCair(); });
+    app.querySelectorAll("[data-pc-modo]").forEach(b => b.onclick = () => { pc.modo = b.dataset.pcModo; telaPodeCair(); });
+    try { await carregarGlossario(); }
+    catch {
+      const c = app.querySelector("#pc-corpo");
+      if (c) c.innerHTML = `<div class="card rk-vazio"><p style="margin-top:0">Não consegui carregar as siglas. Confira sua conexão.</p><button class="btn btn-sm" type="button" id="pc-tentar">${ic("redo")} Tentar de novo</button></div>`;
+      app.querySelector("#pc-tentar")?.addEventListener("click", telaPodeCair);
+      return;
+    }
+    if (location.hash !== "#podecair") return;
+    pc.modo === "colinha" ? renderColinha() : renderIma();
+  }
+
+  /* ----- Colinha: consulta de todos os termos da disciplina ----- */
+  function renderColinha() {
+    const corpo = app.querySelector("#pc-corpo"), lista = termosDe(pc.disc);
+    const dom = lista.filter(x => db.glos?.[x.id]?.ok).length;
+    corpo.innerHTML = `
+      <div class="pc-busca nome-box">
+        <label for="pc-q">${ic("target")} Procurar sigla ou termo</label>
+        <input id="pc-q" type="search" placeholder="Ex.: SLA, hash, COBIT…" value="${esc(pc.busca)}" autocomplete="off">
+      </div>
+      <p class="muted small">${lista.length} termos de ${esc(DISC[pc.disc].nome)} · <b>${dom}</b> dominados no ímã 🧲</p>
+      <dl class="colinha" id="pc-lista"></dl>`;
+    const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+    const desenhar = () => {
+      const q = norm(pc.busca.trim());
+      const vis = lista.filter(x => !q || norm(`${x.t} ${x.n} ${x.c}`).includes(q));
+      corpo.querySelector("#pc-lista").innerHTML = vis.length ? vis.map(x => `
+        <div class="colinha-item ${db.glos?.[x.id]?.ok ? "dominado" : ""}">
+          <dt><b>${esc(x.t)}</b>${db.glos?.[x.id]?.ok ? ` <span class="seal seal-ok" title="Você já ligou de primeira">🧲 dominado</span>` : ""}</dt>
+          <dd><span class="colinha-nome">${esc(x.n)}</span>${esc(x.c)}</dd>
+        </div>`).join("") : `<p class="muted">Nenhum termo encontrado para “${esc(pc.busca)}”.</p>`;
+    };
+    corpo.querySelector("#pc-q").oninput = e => { pc.busca = e.target.value; desenhar(); };
+    desenhar();
+  }
+
+  /* ----- Jogo do ímã ----- */
+  function renderIma() {
+    if (!ima || ima.disc !== pc.disc || ima.feitos.size === ima.pares.length && ima.fim) novaRodada(pc.disc);
+    const corpo = app.querySelector("#pc-corpo");
+    corpo.innerHTML = `
+      <div class="ima-status">
+        <span class="hud-pill" id="ima-placar">🧲 <b>${ima.feitos.size}</b>/${ima.pares.length} ligados</span>
+        <span class="hud-pill">+<b id="ima-xp">${ima.xp}</b> créditos</span>
+        <button class="btn btn-sm btn-ghost" type="button" id="ima-nova">${ic("redo")} Nova rodada</button>
+      </div>
+      <p class="sr-only" id="ima-aviso" aria-live="assertive"></p>
+      <div class="ima-board">
+        <div class="ima-pecas" aria-label="Siglas (ímãs)">${ima.pecas.map(x => `
+          <button class="ima-peca ${ima.feitos.has(x.id) ? "usada" : ""}" type="button" data-id="${esc(x.id)}" aria-pressed="false" ${ima.feitos.has(x.id) ? "disabled" : ""}>
+            <span class="ima-polo" aria-hidden="true"></span>${esc(x.t)}</button>`).join("")}
+        </div>
+        <ol class="ima-alvos" aria-label="Conceitos">${ima.alvos.map(x => {
+          const feito = ima.feitos.has(x.id);
+          return `<li><button class="ima-alvo ${feito ? "feito" : ""}" type="button" data-id="${esc(x.id)}" ${feito ? "disabled" : ""}>
+            <span class="ima-slot" aria-hidden="${!feito}">${feito ? `<b>${esc(x.t)}</b>` : "🧲"}</span>
+            <span class="ima-conc">${esc(x.c)}${feito ? `<span class="ima-nome">${esc(x.t)} = ${esc(x.n)}</span>` : ""}</span>
+          </button></li>`; }).join("")}
+        </ol>
+      </div>
+      <p class="muted small" style="margin-top:16px">Os créditos do ímã sobem o seu nível, mas não entram no ranking (lá só valem as questões do quiz).</p>`;
+    corpo.querySelector("#ima-nova").onclick = () => { novaRodada(pc.disc); renderIma(); };
+    corpo.querySelectorAll(".ima-peca:not(.usada)").forEach(prepararPeca);
+    corpo.querySelectorAll(".ima-alvo").forEach(a => a.onclick = () => {
+      if (a.classList.contains("feito")) return;
+      const p = ima.sel && corpo.querySelector(`.ima-peca[data-id="${CSS.escape(ima.sel)}"]`);
+      if (!p) { aviso("Escolha primeiro uma sigla e depois toque no conceito."); corpo.querySelector(".ima-peca:not(.usada)")?.focus(); return; }
+      tentar(p, a, null);
+    });
+  }
+
+  const aviso = txt => { const a = app.querySelector("#ima-aviso"); if (a) a.textContent = txt; };
+  function selecionar(p) {
+    app.querySelectorAll(".ima-peca").forEach(x => { const on = x === p && ima.sel !== x.dataset.id; x.classList.toggle("selecionada", on); x.setAttribute("aria-pressed", on); });
+    ima.sel = p && ima.sel !== p.dataset.id ? p.dataset.id : null;
+    if (ima.sel) aviso(`${p.textContent.trim()} selecionada. Agora escolha o conceito.`);
+  }
+
+  function prepararPeca(p) {
+    let ignorarClique = false;
+    p.onclick = () => { if (ignorarClique) { ignorarClique = false; return; } selecionar(p); };
+    p.onpointerdown = e => {
+      if (e.button !== 0 || p.classList.contains("usada")) return;
+      const r = p.getBoundingClientRect(), ox = e.clientX - r.left, oy = e.clientY - r.top;
+      let fantasma = null, perto = null, rolar = 0, raf = 0;
+      const mover = ev => {
+        if (!fantasma) {
+          if (Math.hypot(ev.clientX - e.clientX, ev.clientY - e.clientY) < 6) return;
+          fantasma = p.cloneNode(true); fantasma.classList.add("ima-fantasma"); fantasma.removeAttribute("id");
+          fantasma.style.width = r.width + "px"; document.body.appendChild(fantasma);
+          p.classList.add("ima-origem"); selecionar(null);
+        }
+        fantasma.style.transform = `translate(${ev.clientX - ox}px, ${ev.clientY - oy}px) rotate(-3deg) scale(1.06)`;
+        const el = document.elementFromPoint(ev.clientX, ev.clientY)?.closest(".ima-alvo:not(.feito)") || null;
+        if (el !== perto) { perto?.classList.remove("perto"); el?.classList.add("perto"); perto = el; }
+        /* rolagem automática perto das bordas (celular) */
+        rolar = ev.clientY < 90 ? -14 : ev.clientY > innerHeight - 110 ? 14 : 0;
+        if (rolar && !raf) { const passo = () => { if (!rolar) { raf = 0; return; } scrollBy(0, rolar); raf = requestAnimationFrame(passo); }; raf = requestAnimationFrame(passo); }
+      };
+      const fim = ev => {
+        p.removeEventListener("pointermove", mover); p.removeEventListener("pointerup", fim); p.removeEventListener("pointercancel", fim);
+        rolar = 0;
+        if (!fantasma) return;
+        ignorarClique = true; setTimeout(() => { ignorarClique = false; }, 50);
+        perto?.classList.remove("perto");
+        /* a página pode ter rolado sozinha: confere de novo o que está embaixo do dedo */
+        if (ev.type === "pointerup") perto = document.elementFromPoint(ev.clientX, ev.clientY)?.closest(".ima-alvo:not(.feito)") || null;
+        if (perto && ev.type === "pointerup") tentar(p, perto, fantasma);
+        else voltar(p, fantasma);
+      };
+      p.setPointerCapture(e.pointerId);
+      p.addEventListener("pointermove", mover); p.addEventListener("pointerup", fim); p.addEventListener("pointercancel", fim);
+    };
+  }
+
+  /* anima o fantasma até um retângulo e chama o fim */
+  function voar(fantasma, alvoRect, dur, curva, fimFn) {
+    if (reduz) { fantasma.remove(); return fimFn(); }
+    fantasma.style.transition = `transform ${dur}ms ${curva}`;
+    fantasma.style.transform = `translate(${alvoRect.left}px, ${alvoRect.top}px)`;
+    let feito = false;
+    const acabar = () => { if (feito) return; feito = true; fantasma.remove(); fimFn(); };
+    fantasma.addEventListener("transitionend", acabar, { once: true }); setTimeout(acabar, dur + 80);
+  }
+  const criarFantasma = p => {
+    const r = p.getBoundingClientRect(), f = p.cloneNode(true);
+    f.classList.add("ima-fantasma"); f.style.width = r.width + "px"; f.style.transform = `translate(${r.left}px, ${r.top}px)`;
+    document.body.appendChild(f); return f;
+  };
+  function voltar(p, fantasma) {
+    voar(fantasma, p.getBoundingClientRect(), 380, "cubic-bezier(.3, 1.5, .5, 1)", () => p.classList.remove("ima-origem"));
+  }
+
+  function tentar(p, alvo, fantasma) {
+    const id = p.dataset.id, certo = alvo.dataset.id === id, x = ima.pares.find(y => y.id === id);
+    db.glos = db.glos || {};
+    const g = db.glos[id] || (db.glos[id] = { t: 0, a: 0 });
+    selecionar(null);
+    if (certo) {
+      const dePrimeira = !ima.erros[id];
+      const pts = dePrimeira && !g.ok ? 3 : 1;
+      g.t++; g.a++; if (dePrimeira) g.ok = true;
+      ima.feitos.add(id); ima.xp += pts; if (dePrimeira) ima.primeira++;
+      p.classList.add("usada"); p.disabled = true; p.classList.remove("ima-origem");
+      const slot = alvo.querySelector(".ima-slot");
+      const grudar = () => {
+        alvo.classList.add("feito", "grudou"); alvo.disabled = true;
+        slot.innerHTML = `<b>${esc(x.t)}</b>`; slot.setAttribute("aria-hidden", "false");
+        alvo.querySelector(".ima-conc").insertAdjacentHTML("beforeend", `<span class="ima-nome">${esc(x.t)} = ${esc(x.n)}</span>`);
+        app.querySelector("#ima-placar").innerHTML = `🧲 <b>${ima.feitos.size}</b>/${ima.pares.length} ligados`;
+        app.querySelector("#ima-xp").textContent = ima.xp;
+        const r = slot.getBoundingClientRect();
+        confete(dePrimeira ? 22 : 10, { x: r.left + r.width / 2, y: r.top + r.height / 2 });
+        aviso(`Grudou! ${x.t} = ${x.n}. +${pts} créditos.`);
+        const fimRodada = ima.feitos.size === ima.pares.length;
+        const perfeito = fimRodada && ima.primeira === ima.pares.length;
+        somarXp(pts, slot, perfeito ? ["ima"] : []);
+        if (fimRodada) setTimeout(() => location.hash === "#podecair" && resultadoIma(), reduz ? 200 : 900);
+        else app.querySelector(".ima-peca:not(.usada)")?.focus({ preventScroll: true });
+      };
+      const f = fantasma || criarFantasma(p);
+      const sr = slot.getBoundingClientRect();
+      voar(f, { left: sr.left + (sr.width - f.offsetWidth) / 2, top: sr.top + (sr.height - f.offsetHeight) / 2 }, 320, "cubic-bezier(.2, 1.6, .4, 1)", grudar);
+    } else {
+      ima.erros[id] = (ima.erros[id] || 0) + 1;
+      g.t++;
+      save();
+      alvo.classList.remove("repele"); void alvo.offsetWidth; alvo.classList.add("repele");
+      setTimeout(() => alvo.classList.remove("repele"), 600);
+      const f = fantasma || criarFantasma(p);
+      p.classList.add("ima-origem");
+      /* empurrão para longe do conceito antes de voltar */
+      const ar = alvo.getBoundingClientRect(), m = new DOMMatrixReadOnly(getComputedStyle(f).transform);
+      const dx = m.m41 - (ar.left + ar.width / 2), dy = m.m42 - (ar.top + ar.height / 2), d = Math.hypot(dx, dy) || 1;
+      if (!reduz) {
+        f.style.transition = "transform 140ms ease-out";
+        f.style.transform = `translate(${m.m41 + dx / d * 46}px, ${m.m42 + dy / d * 46}px) rotate(8deg)`;
+      }
+      setTimeout(() => voltar(p, f), reduz ? 0 : 150);
+      setTimeout(() => { p.classList.remove("treme"); void p.offsetWidth; p.classList.add("treme"); }, reduz ? 0 : 520);
+      aviso(`${x.t} não gruda nesse conceito. Tente outra vez!`);
+      toast(`<span class="toast-ic">🧲</span><div><b>Repelido!</b><br>${esc(x.t)} não gruda aí. Tente outra vez.</div>`);
+    }
+  }
+
+  function resultadoIma() {
+    ima.fim = true;
+    const total = ima.pares.length, perf = ima.primeira === total;
+    const corpo = app.querySelector("#pc-corpo");
+    corpo.innerHTML = `
+      <div class="card ima-fim">
+        ${carca(ima.primeira >= total * .7 ? "comemorando" : "pensando", "carca-banner")}
+        <div>
+          <p class="eyebrow">${perf ? "Ímã humano!" : "Rodada concluída"}</p>
+          <h3 style="margin:0 0 6px">${ima.primeira} de ${total} de primeira · +${ima.xp} créditos</h3>
+          ${fala(perf ? "Gabaritou as siglas! Essas já não te pegam mais na prova. 🧲" : "Boa! As que você errou voltam nas próximas rodadas até grudarem de primeira.")}
+          <div class="btn-row" style="margin-top:14px">
+            <button class="btn btn-primary" type="button" id="ima-de-novo">🧲 Próxima rodada</button>
+            <button class="btn btn-ghost" type="button" id="ima-colinha">📖 Ver colinha</button>
+          </div>
+        </div>
+      </div>
+      <dl class="colinha" style="margin-top:20px">${ima.pares.map(x => `
+        <div class="colinha-item ${ima.erros[x.id] ? "" : "dominado"}"><dt><b>${esc(x.t)}</b> ${ima.erros[x.id] ? `<span class="seal seal-warn">${ima.erros[x.id]} erro(s)</span>` : `<span class="seal seal-ok">de primeira</span>`}</dt>
+        <dd><span class="colinha-nome">${esc(x.n)}</span>${esc(x.c)}</dd></div>`).join("")}</dl>`;
+    corpo.querySelector("#ima-de-novo").onclick = () => { novaRodada(pc.disc); renderIma(); corpo.scrollIntoView({ behavior: reduz ? "auto" : "smooth", block: "start" }); };
+    corpo.querySelector("#ima-colinha").onclick = () => { pc.modo = "colinha"; telaPodeCair(); };
+    corpo.querySelector("#ima-de-novo").focus({ preventScroll: true });
   }
 
   /* ---------- Ranking (Supabase) ----------

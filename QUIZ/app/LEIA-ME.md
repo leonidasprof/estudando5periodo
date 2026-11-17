@@ -50,3 +50,9 @@ Passe pelo checklist de produção: imagens WebP/AVIF com `width`/`height`, hero
 - `../supabase/esquema.sql`: tabelas (RLS fechado), funções `ranking_*`. `../supabase/gabarito.sql`: respostas (gerado). `../supabase/instalar.sql`: os dois juntos, para a primeira instalação.
 - A URL e a chave **publishable** ficam em `RANKING` no `app.js` (são públicas). Nunca coloque a chave **secret** no código.
 - Plano grátis do Supabase pausa o projeto após 7 dias sem acesso; se acontecer, reative no painel.
+
+## Pode cair (Ímã de siglas)
+- Aba **Pode cair**: arraste a sigla (ímã) até o conceito certo. Par certo gruda; par errado é repelido e volta. Também funciona tocando (sigla e depois conceito) e com Tab + Enter.
+- Rodadas de 6 pares, priorizando os termos que a pessoa ainda não acertou de primeira. **+3 créditos** no 1º acerto de primeira de um termo, **+1** nos demais. Rodada perfeita libera a conquista "Ímã humano". Esses créditos não entram no ranking.
+- **Colinha**: consulta de todos os termos da disciplina, com busca (ignora acentos).
+- Os termos ficam em `glossario.js` (`t` = sigla, `n` = por extenso, `c` = conceito). O arquivo só é baixado quando a pessoa abre a aba. Ao editar, aumente o `?v=` dele em `carregarGlossario` no `app.js`.

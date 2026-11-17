@@ -36,11 +36,19 @@ O selo **Oficial** indica gabarito conferido com a correção do Moodle; **Espec
 - Modos **todas**, **só as que errei** (segunda chamada) e **ainda não respondidas**.
 - Formatos: múltipla escolha (inclusive com mais de uma correta), verdadeiro/falso, lacunas e associação.
 
+**🧲 Pode cair: Ímã de siglas**
+- 120 siglas e termos que aparecem nas questões (SLA, hash, COBIT, BPMN…), separados por disciplina.
+- Arraste a sigla até o conceito: par certo **gruda**, par errado é **repelido** e você tenta de novo. Também funciona tocando ou pelo teclado.
+- **Colinha** com busca para consultar tudo, marcando o que você já domina.
+
+**🏆 Ranking da turma**
+- Pódio e classificação com apelido (participação opcional). O servidor (Supabase) confere cada resposta no gabarito, então não dá para inventar pontos.
+
 **Gamificação de formatura**
 - **Créditos** por acerto, bônus por questão difícil e por recuperar um erro, e **combo 🔥** a partir de 3 acertos seguidos.
 - **8 níveis:** Calouro → Veterano → Estagiário → Monitor → Concluinte → **Formando** → Orador da Turma → Laureado.
 - **Colação de grau** aos 1000 créditos, com chuva de capelos e **diploma** (não oficial 😄) com o nome do jogador.
-- **12 conquistas**, como "Em chamas", "Hacker do bem", "Pronto pro ENADE" e "Coruja de véspera".
+- **13 conquistas**, como "Em chamas", "Hacker do bem", "Pronto pro ENADE", "Coruja de véspera" e "Ímã humano".
 
 **Carca, o mascote**
 - Recebe você no início, estuda junto na tela de configuração, **comemora quando você acerta**, **fica pensativo quando você erra** e, de óculos VR, mostra quanto falta para a sua formatura.
@@ -65,8 +73,11 @@ QUIZ/
 │   ├── app.js              # telas, regras de negócio e gamificação
 │   ├── styles.css          # design system (dark neon, tema claro, motions)
 │   ├── banco.js            # gerado a partir de banco_questoes.json
+│   ├── glossario.js        # siglas e termos do "Pode cair" (carrega só na aba)
+│   ├── gerar_gabarito_sql.py # gera o gabarito do ranking para o Supabase
 │   ├── atualizar_banco.py  # regenera o banco.js
 │   └── assets/             # logo, fotos dos professores e poses do Carca
+├── supabase/               # SQL do ranking (esquema, gabarito, instalar.sql)
 ├── banco_questoes.json     # banco mestre: 198 questões com explicações
 ├── design-system.md        # cores, tipografia e componentes
 ├── notas_estudos_de_caso.md
